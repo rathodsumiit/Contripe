@@ -38,26 +38,49 @@ auth.onAuthStateChanged((user) => {
     }
 });
 
+// Helper to apply DP visually
+function applyProfilePicture(url) {
+    document.getElementById('dpContainer').style.backgroundImage = `url(${url})`;
+    document.getElementById('dpIcon').style.display = 'none';
+    currentUser.dpUrl = url;
+}
+
+// Check Database OR Local Browser Memory
 function checkUserAndNavigate(user) {
+    // 1. Check if browser remembers them from a previous session
+    const localUpi = localStorage.getItem(`contripe_upi_${user.uid}`);
+    const localDp = localStorage.getItem(`contripe_dp_${user.uid}`);
+
+    // 2. Try to ask Firebase
     db.collection("users").doc(user.uid).get()
         .then((doc) => {
             if (doc.exists && doc.data().upi) {
+                // Firebase has the data!
                 currentUser.upi = doc.data().upi;
-                if (doc.data().dp) {
-                    document.getElementById('dpContainer').style.backgroundImage = `url(${doc.data().dp})`;
-                    document.getElementById('dpIcon').style.display = 'none';
-                    currentUser.dpUrl = doc.data().dp;
-                }
+                if (doc.data().dp) applyProfilePicture(doc.data().dp);
+                navigateTo('dashboardScreen');
+            } else if (localUpi) {
+                // Firebase failed, but Browser remembers!
+                currentUser.upi = localUpi;
+                if (localDp) applyProfilePicture(localDp);
                 navigateTo('dashboardScreen');
             } else {
+                // Totally new user
                 document.getElementById('profileName').value = currentUser.name;
                 navigateTo('profileScreen');
             }
         })
         .catch((error) => {
             console.error("DB Error:", error);
-            document.getElementById('profileName').value = currentUser.name;
-            navigateTo('profileScreen'); 
+            // If Firebase is blocked, trust the Browser Memory!
+            if (localUpi) {
+                currentUser.upi = localUpi;
+                if (localDp) applyProfilePicture(localDp);
+                navigateTo('dashboardScreen');
+            } else {
+                document.getElementById('profileName').value = currentUser.name;
+                navigateTo('profileScreen'); 
+            }
         });
 }
 
@@ -119,16 +142,13 @@ document.getElementById('dpInput').addEventListener('change', function(event) {
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            const dpContainer = document.getElementById('dpContainer');
-            dpContainer.style.backgroundImage = `url(${e.target.result})`;
-            document.getElementById('dpIcon').style.display = 'none';
-            currentUser.dpUrl = e.target.result; 
+            applyProfilePicture(e.target.result);
         }
         reader.readAsDataURL(file);
     }
 });
 
-// Save Profile (With Anti-Freeze & Emergency Bypass)
+// Save Profile (With LocalStorage Backup)
 document.getElementById('saveProfileBtn').addEventListener('click', () => {
     const upi = document.getElementById('profileUpi').value;
 
@@ -147,15 +167,20 @@ document.getElementById('saveProfileBtn').addEventListener('click', () => {
 
     currentUser.upi = upi;
 
-    // EMERGENCY BYPASS: If Firebase is blocked by an adblocker or slow Wi-Fi,
-    // we won't let it freeze your app. After 3 seconds, we force you in!
+    // --- NEW: Save directly to the browser's memory immediately! ---
+    localStorage.setItem(`contripe_upi_${currentUser.uid}`, currentUser.upi);
+    if (currentUser.dpUrl) {
+        localStorage.setItem(`contripe_dp_${currentUser.uid}`, currentUser.dpUrl);
+    }
+
+    // Emergency Bypass
     let isSaved = false;
     const emergencyTimeout = setTimeout(() => {
         if (!isSaved) {
-            console.warn("Database connection is slow or blocked. Bypassing to Dashboard!");
+            console.warn("Bypassing to Dashboard! Local memory engaged.");
             btn.textContent = originalText;
             btn.disabled = false;
-            navigateTo('dashboardScreen'); // Force entry
+            navigateTo('dashboardScreen');
         }
     }, 3000);
 
@@ -170,18 +195,15 @@ document.getElementById('saveProfileBtn').addEventListener('click', () => {
             clearTimeout(emergencyTimeout);
             btn.textContent = originalText;
             btn.disabled = false;
-            navigateTo('dashboardScreen'); // Success!
+            navigateTo('dashboardScreen');
         }).catch((error) => {
             isSaved = true;
             clearTimeout(emergencyTimeout);
             btn.textContent = originalText;
             btn.disabled = false;
-            console.error("Firebase Error:", error);
-            // Even if it fails, let's go to the dashboard so you can test the app!
             navigateTo('dashboardScreen'); 
         });
     } catch (err) {
-        // Catches deep code errors instantly
         isSaved = true;
         clearTimeout(emergencyTimeout);
         btn.textContent = originalText;
