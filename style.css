@@ -1,4 +1,3 @@
-/* Base Styles & Reset */
 * {
     margin: 0;
     padding: 0;
@@ -102,6 +101,11 @@ input:focus, select:focus {
     background: white;
 }
 
+input:disabled {
+    background: #e2e8f0;
+    color: #64748b;
+}
+
 .primary-btn {
     background-color: #002970;
     color: white;
@@ -119,24 +123,6 @@ input:focus, select:focus {
 .primary-btn:hover { background-color: #001f54; }
 
 .blue-bg { background-color: #00baf2 !important; }
-
-/* Logout Button */
-.secondary-btn {
-    margin-top: 30px; 
-    width: 100%; 
-    padding: 15px; 
-    border-radius: 12px; 
-    border: 1px solid #ddd; 
-    background: white; 
-    font-weight: bold; 
-    color: #e74c3c; 
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.secondary-btn:hover {
-    background: #fdf2f2;
-}
 
 /* Auth Links & Toggles */
 .auth-toggle-container {
@@ -248,7 +234,7 @@ input:focus, select:focus {
 
 /* Contri Features */
 .summary-card {
-    background: #f8fafc;
+    background: #f3f4f6;
     padding: 1.5rem;
     border-radius: 16px;
     text-align: center;
@@ -290,13 +276,6 @@ input:focus, select:focus {
 }
 
 /* Expense List */
-.data-list {
-    list-style: none;
-    margin-top: 15px;
-    max-height: 150px;
-    overflow-y: auto;
-}
-
 .data-list li {
     display: flex;
     justify-content: space-between;
@@ -316,7 +295,6 @@ input:focus, select:focus {
     border-radius: 16px;
     padding: 15px;
     margin-top: 20px;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
 
 /* Global Modal */
@@ -345,11 +323,6 @@ input:focus, select:focus {
     position: absolute;
     top: 10px; right: 20px;
     font-size: 28px; cursor: pointer; color: #94a3b8;
-    transition: color 0.2s;
-}
-
-.close-btn:hover {
-    color: #334155;
 }
 
 .qr-container {
