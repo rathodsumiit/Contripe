@@ -24,7 +24,6 @@ body {
     position: relative;
 }
 
-/* Screen Management */
 .screen {
     display: none;
     padding: 2rem 1.5rem;
@@ -42,7 +41,6 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Headers */
 .brand-header {
     text-align: center;
     margin: 3rem 0;
@@ -73,7 +71,6 @@ body {
     cursor: pointer;
 }
 
-/* Inputs & Buttons */
 .form-group, .input-group {
     display: flex;
     flex-direction: column;
@@ -121,10 +118,25 @@ input:disabled {
 
 .primary-btn:active { transform: scale(0.98); }
 .primary-btn:hover { background-color: #001f54; }
-
 .blue-bg { background-color: #00baf2 !important; }
 
-/* Auth Links & Toggles */
+.secondary-btn {
+    margin-top: 30px; 
+    width: 100%; 
+    padding: 15px; 
+    border-radius: 12px; 
+    border: 1px solid #ddd; 
+    background: white; 
+    font-weight: bold; 
+    color: #e74c3c; 
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.secondary-btn:hover {
+    background: #fdf2f2;
+}
+
 .auth-toggle-container {
     text-align: center;
     margin-top: 10px;
@@ -193,7 +205,6 @@ input:disabled {
     font-size: 0.9rem;
 }
 
-/* Profile Area */
 .profile-pic-placeholder {
     width: 100px;
     height: 100px;
@@ -207,7 +218,6 @@ input:disabled {
     border: 2px dashed #cbd5e1;
 }
 
-/* Dashboard Cards */
 .dashboard-cards {
     display: flex;
     flex-direction: column;
@@ -232,7 +242,6 @@ input:disabled {
 .dash-card h3 { font-size: 1.2rem; margin-bottom: 5px; }
 .dash-card p { font-size: 0.9rem; opacity: 0.8; }
 
-/* Contri Features */
 .summary-card {
     background: #f3f4f6;
     padding: 1.5rem;
@@ -275,7 +284,6 @@ input:disabled {
     font-weight: bold;
 }
 
-/* Expense List */
 .data-list li {
     display: flex;
     justify-content: space-between;
@@ -288,16 +296,15 @@ input:disabled {
     color: #0f172a;
 }
 
-/* Tracker Chart Area */
 .chart-container {
     background: white;
     border: 1px solid #eee;
     border-radius: 16px;
     padding: 15px;
     margin-top: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
 
-/* Global Modal */
 .modal {
     display: none;
     position: absolute;
@@ -323,6 +330,11 @@ input:disabled {
     position: absolute;
     top: 10px; right: 20px;
     font-size: 28px; cursor: pointer; color: #94a3b8;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: #334155;
 }
 
 .qr-container {
