@@ -31,9 +31,8 @@
 
         <section id="loginScreen" class="screen active">
             <div class="brand-header">
-                <h1>ContriPe.</h1>
+                <h1>ContriPe</h1>
                 <p>Split smarter, pay faster.</p>
-                <p>Crafted by SR</p>
             </div>
             <div class="form-group">
                 <input type="email" id="loginEmail" placeholder="Email Address">
@@ -76,6 +75,54 @@
             </div>
             <div class="auth-toggle-container">
                 <p class="auth-text">Already have an account? <a href="#" class="auth-link" onclick="navigateTo('loginScreen')">Login</a></p>
+            </div>
+        </section>
+
+        <section id="onboardingScreen" class="screen" style="padding: 1.5rem 1rem;">
+            <div class="onboarding-container">
+                <div class="skip-container">
+                    <button class="skip-btn" onclick="finishTour()">Skip</button>
+                </div>
+
+                <div class="slider-wrapper" id="sliderWrapper">
+                    
+                    <div class="slide">
+                        <div class="slide-illustration">
+                            <span class="emoji-huge animation-float">👋</span>
+                            <span class="emoji-small animation-bounce" style="top: 10%; right: 15%;">✨</span>
+                        </div>
+                        <h2 class="slide-title">Welcome to ContriPe, <br><span id="welcomeName" style="color: #00baf2;">User</span>!</h2>
+                        <p class="slide-desc">Your ultimate companion for splitting bills and tracking expenses without the awkward math.</p>
+                    </div>
+
+                    <div class="slide">
+                        <div class="slide-illustration">
+                            <span class="emoji-huge animation-float" style="animation-delay: 0.5s;">🏖️</span>
+                            <span class="emoji-small animation-spin-slow" style="bottom: 15%; left: 10%;">🚗</span>
+                        </div>
+                        <h2 class="slide-title">Travel & Split</h2>
+                        <p class="slide-desc">From Goa trips to weekend getaways, add expenses on the go and generate UPI QRs instantly to get paid back.</p>
+                    </div>
+
+                    <div class="slide">
+                        <div class="slide-illustration">
+                            <span class="emoji-huge animation-pulse">🍽️</span>
+                            <span class="emoji-small animation-float" style="top: 15%; right: 10%;">🥂</span>
+                        </div>
+                        <h2 class="slide-title">Dinner Dates & Chills</h2>
+                        <p class="slide-desc">Keep your friendships strong and your personal spending in check with our beautiful expense tracker.</p>
+                    </div>
+
+                </div>
+
+                <div class="onboarding-controls">
+                    <div class="dots">
+                        <span class="dot active"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                    <button class="primary-btn" id="nextSlideBtn" onclick="nextSlide()">Next ➔</button>
+                </div>
             </div>
         </section>
 
