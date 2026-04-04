@@ -16,17 +16,13 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ==========================================
-// 2. APP STATE & THEME INITIALIZATION
+// 2. APP STATE
 // ==========================================
 let currentUser = { name: "User", upi: "", uid: null, dpUrl: null };
 let contriExpenses = [];
-let trackerData = { "Food": 0, "Travel": 0, "Stay": 0, "Misc": 0 };
+let trackerTransactions = []; 
 let expenseChart; 
 let qrCodeInstance = null;
-
-if (localStorage.getItem('contripe_theme') === 'dark') {
-    document.body.classList.add('dark-theme');
-}
 
 // ==========================================
 // 3. MASTER AUTHENTICATION CONTROLLER
@@ -52,17 +48,14 @@ function applyProfilePicture(url, isEdit = false) {
     currentUser.dpUrl = url;
 }
 
-// Routes users directly to the Tour OR the Dashboard
 function routeAfterAuth() {
     const hasSeenTour = localStorage.getItem(`contripe_tour_${currentUser.uid}`);
     if (!hasSeenTour) {
-        // Show Tour! Extract just their first name.
         document.getElementById('welcomeName').textContent = currentUser.name.split(' ')[0] || "User";
         currentSlideIndex = 0;
         updateSlider();
         navigateTo('onboardingScreen');
     } else {
-        // Already seen it, go to dashboard.
         navigateTo('dashboardScreen');
     }
 }
@@ -156,13 +149,9 @@ function updateSlider() {
     const dots = document.querySelectorAll('.dot');
     const btn = document.getElementById('nextSlideBtn');
 
-    // Slide animation
     slides.forEach(s => s.style.transform = `translateX(-${currentSlideIndex * 100}%)`);
-
-    // Update Dots
     dots.forEach((d, i) => d.classList.toggle('active', i === currentSlideIndex));
 
-    // Update Button Text
     if (currentSlideIndex === 2) {
         btn.textContent = "Let's Go! 🚀";
     } else {
@@ -171,13 +160,12 @@ function updateSlider() {
 }
 
 function finishTour() {
-    // Save to memory so it never shows again for this user!
     localStorage.setItem(`contripe_tour_${currentUser.uid}`, 'true');
     navigateTo('dashboardScreen');
 }
 
 // ==========================================
-// 5. SIDEBAR & THEME LOGIC
+// 5. SIDEBAR LOGIC
 // ==========================================
 function openSidebar() {
     document.getElementById('sidebarMenu').classList.add('open');
@@ -187,18 +175,6 @@ function openSidebar() {
 function closeSidebar() {
     document.getElementById('sidebarMenu').classList.remove('open');
     document.getElementById('sidebarOverlay').classList.remove('active');
-}
-
-function toggleTheme() {
-    document.body.classList.toggle('dark-theme');
-    const isDark = document.body.classList.contains('dark-theme');
-    localStorage.setItem('contripe_theme', isDark ? 'dark' : 'light');
-    
-    if(expenseChart) {
-        Chart.defaults.color = isDark ? '#cbd5e1' : '#64748b';
-        expenseChart.update();
-    }
-    closeSidebar();
 }
 
 // ==========================================
@@ -280,11 +256,60 @@ function navigateTo(screenId) {
 
     if (screenId === 'dashboardScreen') {
         document.getElementById('dashName').textContent = currentUser.name.split(' ')[0] || "User";
+        document.getElementById('dashCardName').textContent = currentUser.name;
+        updateDashboardCard(); // Refresh card data when hitting dashboard
     }
-    if (screenId === 'trackerScreen') initChart();
+    
+    if (screenId === 'trackerScreen') {
+        if(!document.getElementById('trackerMonthFilter').value) {
+            document.getElementById('trackerMonthFilter').value = new Date().toISOString().slice(0, 7);
+        }
+        updateTrackerUI();
+    }
 }
 
+// ==========================================
+// NEW: Update Dashboard ContriPe Card
+// ==========================================
+function updateDashboardCard() {
+    let totalInc = 0;
+    let totalExp = 0;
+
+    // Calculate totals across ALL transactions
+    trackerTransactions.forEach(tx => {
+        if (tx.type === 'credit') {
+            totalInc += tx.amount;
+        } else {
+            totalExp += tx.amount;
+        }
+    });
+
+    const netBalance = totalInc - totalExp;
+
+    // Update Card UI
+    document.getElementById('dashIncome').textContent = `₹${totalInc.toFixed(2)}`;
+    document.getElementById('dashExpense').textContent = `₹${totalExp.toFixed(2)}`;
+    
+    const balanceElem = document.getElementById('dashNetBalance');
+    balanceElem.textContent = `₹${netBalance.toFixed(2)}`;
+    
+    // Dynamic Glow and Color for Balance
+    if (netBalance > 0) {
+        balanceElem.className = "text-green";
+        balanceElem.style.textShadow = "0 0 20px rgba(0, 230, 118, 0.3)";
+    } else if (netBalance < 0) {
+        balanceElem.className = "text-red";
+        balanceElem.style.textShadow = "0 0 20px rgba(255, 75, 43, 0.3)";
+    } else {
+        balanceElem.className = "";
+        balanceElem.style.color = "#ffffff";
+        balanceElem.style.textShadow = "none";
+    }
+}
+
+// ==========================================
 // Trip Contri Logic
+// ==========================================
 document.getElementById('addBtn').addEventListener('click', () => {
     const name = document.getElementById('expenseName').value || "Expense";
     const amount = parseFloat(document.getElementById('expenseAmount').value);
@@ -296,21 +321,48 @@ document.getElementById('addBtn').addEventListener('click', () => {
     }
 });
 
+document.getElementById('resetBtn').addEventListener('click', () => {
+    if (contriExpenses.length === 0) return; 
+    if (confirm("Are you sure you want to reset all trip expenses?")) {
+        contriExpenses = [];
+        document.getElementById('friendCount').value = 1; 
+        updateContriUI();
+    }
+});
+
 document.getElementById('friendCount').addEventListener('input', updateContriUI);
+
+function removeContriExpense(index) {
+    contriExpenses.splice(index, 1);
+    updateContriUI(); 
+}
 
 function updateContriUI() {
     const list = document.getElementById('expenseList');
     list.innerHTML = '';
     let total = 0;
-    contriExpenses.forEach(exp => {
+    
+    contriExpenses.forEach((exp, index) => {
         total += exp.amount;
         const li = document.createElement('li');
-        li.innerHTML = `<span>${exp.name}</span> <strong>₹${exp.amount.toFixed(2)}</strong>`;
+        li.innerHTML = `
+            <span>${exp.name}</span> 
+            <div class="expense-amount-wrap">
+                <strong>₹${exp.amount.toFixed(2)}</strong>
+                <span class="delete-icon" onclick="removeContriExpense(${index})">&times;</span>
+            </div>
+        `;
         list.appendChild(li);
     });
+    
     document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
+    
     let friends = parseInt(document.getElementById('friendCount').value) || 1;
-    document.getElementById('perPersonAmount').textContent = `₹${(total / friends).toFixed(2)}`;
+    let perPerson = total / friends;
+    
+    if (isNaN(perPerson) || !isFinite(perPerson)) perPerson = 0;
+    
+    document.getElementById('perPersonAmount').textContent = `₹${perPerson.toFixed(2)}`;
 }
 
 document.getElementById('payBox').addEventListener('click', () => {
@@ -333,38 +385,116 @@ document.getElementById('payBox').addEventListener('click', () => {
     document.getElementById('qrModal').style.display = 'flex';
 });
 
-// Tracker Logic
+// ==========================================
+// Personal Tracker Ledger Logic
+// ==========================================
+function toggleTrackerCategory() {
+    const type = document.getElementById('trackerType').value;
+    document.getElementById('trackerCategory').style.display = type === 'debit' ? 'block' : 'none';
+}
+
 document.getElementById('addTrackerBtn').addEventListener('click', () => {
-    const cat = document.getElementById('trackerCategory').value;
-    const amt = parseFloat(document.getElementById('trackerAmount').value);
-    if (amt > 0) {
-        trackerData[cat] += amt;
+    const type = document.getElementById('trackerType').value;
+    const name = document.getElementById('trackerName').value || (type === 'credit' ? 'Income' : 'Expense');
+    const category = type === 'debit' ? document.getElementById('trackerCategory').value : 'Income';
+    const amount = parseFloat(document.getElementById('trackerAmount').value);
+
+    if (amount > 0) {
+        trackerTransactions.push({
+            id: Date.now(),
+            type: type,
+            name: name,
+            category: category,
+            amount: amount,
+            date: new Date().toISOString()
+        });
+        
+        document.getElementById('trackerName').value = '';
         document.getElementById('trackerAmount').value = '';
-        updateChart();
+        updateTrackerUI();
+        updateDashboardCard(); // Keep dashboard in sync
     }
 });
 
-function initChart() {
+document.getElementById('resetTrackerBtn').addEventListener('click', () => {
+    if (trackerTransactions.length === 0) return;
+    if (confirm("Are you sure you want to delete all tracker records?")) {
+        trackerTransactions = [];
+        updateTrackerUI();
+        updateDashboardCard();
+    }
+});
+
+function removeTrackerItem(id) {
+    trackerTransactions = trackerTransactions.filter(t => t.id !== id);
+    updateTrackerUI();
+    updateDashboardCard();
+}
+
+function updateTrackerUI() {
+    const list = document.getElementById('trackerList');
+    const monthFilter = document.getElementById('trackerMonthFilter').value; 
+    list.innerHTML = '';
+    
+    let chartData = { "Food": 0, "Travel": 0, "Stay": 0, "Misc": 0 };
+
+    const filteredTx = trackerTransactions.filter(t => t.date.startsWith(monthFilter));
+    filteredTx.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    filteredTx.forEach(tx => {
+        if (tx.type !== 'credit') {
+            if(chartData[tx.category] !== undefined) chartData[tx.category] += tx.amount;
+        }
+
+        const li = document.createElement('li');
+        li.className = 'ledger-item';
+        
+        const isCredit = tx.type === 'credit';
+        const sign = isCredit ? '+' : '-';
+        const colorClass = isCredit ? 'text-green' : 'text-red';
+        const dateStr = new Date(tx.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+        li.innerHTML = `
+            <div class="ledger-info">
+                <strong>${tx.name}</strong>
+                <span>${dateStr} • ${tx.category}</span>
+            </div>
+            <div class="expense-amount-wrap">
+                <strong class="${colorClass}">${sign}₹${tx.amount.toFixed(2)}</strong>
+                <span class="delete-icon" onclick="removeTrackerItem(${tx.id})">&times;</span>
+            </div>
+        `;
+        list.appendChild(li);
+    });
+
+    const hasChartData = Object.values(chartData).some(val => val > 0);
+    const chartContainer = document.getElementById('chartWrapper');
+    
+    if (hasChartData) {
+        chartContainer.style.display = 'block';
+        updateExpenseChart(chartData);
+    } else {
+        chartContainer.style.display = 'none';
+    }
+}
+
+function updateExpenseChart(data) {
     const ctx = document.getElementById('expenseChart').getContext('2d');
     if (expenseChart) expenseChart.destroy();
     
-    Chart.defaults.color = document.body.classList.contains('dark-theme') ? '#cbd5e1' : '#64748b';
+    Chart.defaults.color = '#8e8e96';
 
     expenseChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: Object.keys(trackerData),
+            labels: Object.keys(data).filter(k => data[k] > 0),
             datasets: [{
-                data: Object.values(trackerData),
-                backgroundColor: ['#ff6b6b', '#4ecdc4', '#ffe66d', '#1a535c'],
-                borderWidth: 0
+                data: Object.values(data).filter(v => v > 0),
+                backgroundColor: ['#ff4b2b', '#ff416c', '#33333b', '#a52a2a'],
+                borderWidth: 0,
+                hoverOffset: 4
             }]
         },
         options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
-}
-
-function updateChart() {
-    expenseChart.data.datasets[0].data = Object.values(trackerData);
-    expenseChart.update();
 }
