@@ -1,5 +1,5 @@
 // ==========================================
-// 1. FIREBASE CONFIGURATION (Your Keys!)
+// 1. FIREBASE CONFIGURATION (Your Exact Keys)
 // ==========================================
 const firebaseConfig = {
     apiKey: "AIzaSyASRP_nndOsHzJcrJkAuUUkrIPUvKCLAlo",
@@ -16,7 +16,9 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// --- APP STATE ---
+// ==========================================
+// 2. APP STATE
+// ==========================================
 let currentUser = { name: "User", upi: "", uid: null };
 let contriExpenses = [];
 let trackerData = { "Food": 0, "Travel": 0, "Stay": 0, "Misc": 0 };
@@ -24,32 +26,34 @@ let expenseChart;
 let qrCodeInstance = null;
 
 // ==========================================
-// 2. AUTHENTICATION LOGIC
+// 3. AUTHENTICATION LOGIC (Direct Routing)
 // ==========================================
 
-// Listen for Login/Logout State
+// Global Listener (Keeps you logged in if you refresh, boots you to login if not)
 auth.onAuthStateChanged((user) => {
-    if (user) {
-        // User is logged in
-        currentUser.name = user.displayName || "User";
-        currentUser.uid = user.uid;
-        
-        // Check Firestore to see if they have saved a UPI ID before
-        db.collection("users").doc(user.uid).get().then((doc) => {
+    if (!user) {
+        navigateTo('loginScreen');
+    }
+});
+
+// Helper function to check DB and move screens instantly
+function checkUserAndNavigate(user) {
+    db.collection("users").doc(user.uid).get()
+        .then((doc) => {
             if (doc.exists && doc.data().upi) {
                 currentUser.upi = doc.data().upi;
                 navigateTo('dashboardScreen');
             } else {
-                // New user! Send them to Profile Setup to add their UPI
                 document.getElementById('profileName').value = currentUser.name;
                 navigateTo('profileScreen');
             }
+        })
+        .catch((error) => {
+            console.error("DB Error:", error);
+            document.getElementById('profileName').value = currentUser.name;
+            navigateTo('profileScreen'); // Move forward even if DB fails
         });
-    } else {
-        // User is logged out
-        navigateTo('loginScreen');
-    }
-});
+}
 
 function handleEmailLogin() {
     const email = document.getElementById('loginEmail').value;
@@ -57,6 +61,12 @@ function handleEmailLogin() {
     if(!email || !pass) return alert("Please enter email and password.");
 
     auth.signInWithEmailAndPassword(email, pass)
+        .then((userCredential) => {
+            // SUCCESS! Force the screen to change
+            currentUser.name = userCredential.user.displayName || "User";
+            currentUser.uid = userCredential.user.uid;
+            checkUserAndNavigate(userCredential.user);
+        })
         .catch((error) => alert("Login Failed: " + error.message));
 }
 
@@ -69,8 +79,13 @@ function handleSignup() {
 
     auth.createUserWithEmailAndPassword(email, pass)
         .then((userCredential) => {
-            // Give the new account a display name
-            return userCredential.user.updateProfile({ displayName: name });
+            // Give the user a name, then instantly force the screen change
+            userCredential.user.updateProfile({ displayName: name }).then(() => {
+                currentUser.name = name;
+                currentUser.uid = userCredential.user.uid;
+                document.getElementById('profileName').value = name;
+                navigateTo('profileScreen'); 
+            });
         })
         .catch((error) => alert("Signup Failed: " + error.message));
 }
@@ -78,6 +93,12 @@ function handleSignup() {
 function handleGoogleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider)
+        .then((result) => {
+            // SUCCESS! Force the screen to change
+            currentUser.name = result.user.displayName || "User";
+            currentUser.uid = result.user.uid;
+            checkUserAndNavigate(result.user);
+        })
         .catch((error) => alert("Google Login Failed: " + error.message));
 }
 
@@ -91,11 +112,14 @@ function handlePasswordReset() {
 }
 
 function handleLogout() {
-    auth.signOut();
+    auth.signOut().then(() => {
+        currentUser = { name: "User", upi: "", uid: null };
+        navigateTo('loginScreen');
+    });
 }
 
 // ==========================================
-// 3. PROFILE SETUP & FIRESTORE
+// 4. PROFILE SETUP & FIRESTORE
 // ==========================================
 document.getElementById('saveProfileBtn').addEventListener('click', () => {
     const upi = document.getElementById('profileUpi').value;
@@ -119,7 +143,7 @@ document.getElementById('saveProfileBtn').addEventListener('click', () => {
 });
 
 // ==========================================
-// 4. NAVIGATION & DASHBOARD
+// 5. NAVIGATION & DASHBOARD
 // ==========================================
 function navigateTo(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -134,7 +158,7 @@ function navigateTo(screenId) {
 }
 
 // ==========================================
-// 5. TRIP CONTRI LOGIC
+// 6. TRIP CONTRI LOGIC
 // ==========================================
 document.getElementById('addBtn').addEventListener('click', () => {
     const name = document.getElementById('expenseName').value || "Expense";
@@ -199,7 +223,7 @@ document.getElementById('payBox').addEventListener('click', () => {
 });
 
 // ==========================================
-// 6. EXPENSE TRACKER & CHART.JS
+// 7. EXPENSE TRACKER & CHART.JS
 // ==========================================
 document.getElementById('addTrackerBtn').addEventListener('click', () => {
     const category = document.getElementById('trackerCategory').value;
