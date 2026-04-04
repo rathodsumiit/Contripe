@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ContriPe</title>
     <link rel="stylesheet" href="style.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -20,10 +26,10 @@
                 <input type="password" id="loginPassword" placeholder="Password">
                 
                 <div style="text-align: right; margin-top: -5px; margin-bottom: 5px;">
-                    <a href="#" class="auth-link" onclick="alert('Reset link sent to your email!')">Forgot Password?</a>
+                    <a href="#" class="auth-link" onclick="handlePasswordReset()">Forgot Password?</a>
                 </div>
 
-                <button class="primary-btn" onclick="navigateTo('profileScreen')">Login</button>
+                <button class="primary-btn" onclick="handleEmailLogin()">Login</button>
             </div>
 
             <div class="auth-toggle-container">
@@ -32,7 +38,7 @@
 
             <div class="divider"><span>OR</span></div>
             
-            <button class="google-btn" onclick="navigateTo('profileScreen')">
+            <button class="google-btn" onclick="handleGoogleLogin()">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="22px" height="22px">
                     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
                     <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
@@ -67,7 +73,7 @@
                 <span>📷</span>
             </div>
             <div class="form-group">
-                <input type="text" id="profileName" placeholder="Full Name">
+                <input type="text" id="profileName" placeholder="Full Name" disabled>
                 <input type="text" id="profileUpi" placeholder="Your UPI ID (Required)">
                 <button class="primary-btn" id="saveProfileBtn">Save & Continue</button>
             </div>
@@ -87,7 +93,7 @@
                     <p>Analyze your personal spending</p>
                 </div>
             </div>
-            <button class="secondary-btn" onclick="logout()" style="margin-top: 30px; width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #ddd; background: white; font-weight: bold; color: #e74c3c; cursor: pointer;">Logout</button>
+            <button class="secondary-btn" onclick="handleLogout()" style="margin-top: 30px; width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #ddd; background: white; font-weight: bold; color: #e74c3c; cursor: pointer;">Logout</button>
         </section>
 
         <section id="contriScreen" class="screen">
@@ -151,9 +157,7 @@
             <h2>Scan to Pay</h2>
             <p>Paying: <strong id="receiverNameDisplay">Name</strong></p>
             <p>Amount: <strong id="modalAmountDisplay">₹0.00</strong></p>
-            <div class="qr-container">
-                <img id="qrImage" src="" alt="UPI QR">
-            </div>
+            <div class="qr-container" id="qrcode"></div>
             <p class="scan-hint">Use any UPI App</p>
         </div>
     </div>
