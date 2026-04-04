@@ -16,6 +16,19 @@
 <body>
     <div class="app-container">
         
+        <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+        <aside id="sidebarMenu" class="sidebar">
+            <div class="sidebar-header">
+                <h3>Settings</h3>
+                <button class="icon-btn" onclick="closeSidebar()">&times;</button>
+            </div>
+            <ul class="sidebar-links">
+                <li onclick="openEditProfile()">👤 Edit Profile</li>
+                <li onclick="toggleTheme()">🌗 Dark/Light Mode</li>
+                <li onclick="handleLogout()" class="logout-link">🚪 Logout</li>
+            </ul>
+        </aside>
+
         <section id="loginScreen" class="screen active">
             <div class="brand-header">
                 <h1>ContriPe</h1>
@@ -82,13 +95,38 @@
             </div>
         </section>
 
-        <section id="dashboardScreen" class="screen">
+        <section id="editProfileScreen" class="screen">
             <header class="top-nav">
-                <h2>Hi, <span id="dashName">User</span> 👋</h2>
+                <button class="back-btn" onclick="navigateTo('dashboardScreen')">←</button>
+                <h2>Edit Profile</h2>
+            </header>
+            
+            <div class="profile-pic-placeholder" id="editDpContainer" style="cursor: pointer; background-size: cover; background-position: center; overflow: hidden;">
+                <span id="editDpIcon">📷</span>
+            </div>
+            <input type="file" id="editDpInput" accept="image/*" style="display: none;">
+
+            <div class="form-group">
+                <label class="input-label">Display Name</label>
+                <input type="text" id="editName" placeholder="Full Name">
+                
+                <label class="input-label">UPI ID</label>
+                <input type="text" id="editUpi" placeholder="Your UPI ID">
+                
+                <button class="primary-btn" id="updateProfileBtn">Save Changes</button>
+            </div>
+        </section>
+
+        <section id="dashboardScreen" class="screen">
+            <header class="top-nav" style="justify-content: space-between;">
+                <div style="display: flex; align-items: center;">
+                    <button class="menu-btn" onclick="openSidebar()">&#9776;</button>
+                    <h2>Hi, <span id="dashName">User</span> 👋</h2>
+                </div>
             </header>
             <div class="dashboard-cards">
                 <div class="dash-card" onclick="navigateTo('contriScreen')">
-                    <h3>🤝 Trip Contri</h3>
+                    <h3>🤝 Let's Contri</h3>
                     <p>Split bills and generate UPI QR</p>
                 </div>
                 <div class="dash-card blue-bg" onclick="navigateTo('trackerScreen')">
@@ -96,13 +134,12 @@
                     <p>Analyze your personal spending</p>
                 </div>
             </div>
-            <button class="secondary-btn" onclick="handleLogout()">Logout</button>
         </section>
 
         <section id="contriScreen" class="screen">
             <header class="top-nav">
                 <button class="back-btn" onclick="navigateTo('dashboardScreen')">←</button>
-                <h2>Trip Contri</h2>
+                <h2>Let's Contri</h2>
             </header>
             
             <div class="input-group" style="margin-top: 20px;">
@@ -119,7 +156,7 @@
             </div>
             
             <div class="split-controls">
-                <label>How many friends?</label>
+                <label style="color: var(--text-primary); font-weight: bold;">How many friends?</label>
                 <input type="number" id="friendCount" value="1" min="1">
             </div>
 
@@ -158,8 +195,8 @@
         <div class="modal-content">
             <span class="close-btn" onclick="document.getElementById('qrModal').style.display='none'">&times;</span>
             <h2>Scan to Pay</h2>
-            <p>Paying: <strong id="receiverNameDisplay">Name</strong></p>
-            <p>Amount: <strong id="modalAmountDisplay">₹0.00</strong></p>
+            <p style="color: var(--text-secondary)">Paying: <strong id="receiverNameDisplay" style="color: var(--text-primary)">Name</strong></p>
+            <p style="color: var(--text-secondary)">Amount: <strong id="modalAmountDisplay" style="color: var(--text-primary)">₹0.00</strong></p>
             <div class="qr-container" id="qrcode"></div>
             <p class="scan-hint">Use any UPI App</p>
         </div>
