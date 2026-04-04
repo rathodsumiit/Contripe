@@ -69,12 +69,15 @@
             <header class="top-nav">
                 <h2>Set Up Profile</h2>
             </header>
-            <div class="profile-pic-placeholder">
-                <span>📷</span>
+            
+            <div class="profile-pic-placeholder" id="dpContainer" style="cursor: pointer; background-size: cover; background-position: center; overflow: hidden;">
+                <span id="dpIcon">📷</span>
             </div>
+            <input type="file" id="dpInput" accept="image/*" style="display: none;">
+
             <div class="form-group">
                 <input type="text" id="profileName" placeholder="Full Name" disabled>
-                <input type="text" id="profileUpi" placeholder="Your UPI ID (Required)">
+                <input type="text" id="profileUpi" placeholder="Your UPI ID (e.g. name@bank)">
                 <button class="primary-btn" id="saveProfileBtn">Save & Continue</button>
             </div>
         </section>
@@ -93,7 +96,7 @@
                     <p>Analyze your personal spending</p>
                 </div>
             </div>
-            <button class="secondary-btn" onclick="handleLogout()" style="margin-top: 30px; width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #ddd; background: white; font-weight: bold; color: #e74c3c; cursor: pointer;">Logout</button>
+            <button class="secondary-btn" onclick="handleLogout()">Logout</button>
         </section>
 
         <section id="contriScreen" class="screen">
