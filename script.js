@@ -1,5 +1,5 @@
 // ==========================================
-// 1. FIREBASE CONFIGURATION (Your Exact Keys)
+// 1. FIREBASE CONFIGURATION
 // ==========================================
 const firebaseConfig = {
     apiKey: "AIzaSyASRP_nndOsHzJcrJkAuUUkrIPUvKCLAlo",
@@ -11,19 +11,23 @@ const firebaseConfig = {
     measurementId: "G-W3EKQ9X3CN"
 };
 
-// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ==========================================
-// 2. APP STATE
+// 2. APP STATE & THEME INITIALIZATION
 // ==========================================
 let currentUser = { name: "User", upi: "", uid: null, dpUrl: null };
 let contriExpenses = [];
 let trackerData = { "Food": 0, "Travel": 0, "Stay": 0, "Misc": 0 };
 let expenseChart; 
 let qrCodeInstance = null;
+
+// Load Theme from Memory instantly
+if (localStorage.getItem('contripe_theme') === 'dark') {
+    document.body.classList.add('dark-theme');
+}
 
 // ==========================================
 // 3. MASTER AUTHENTICATION CONTROLLER
@@ -38,41 +42,38 @@ auth.onAuthStateChanged((user) => {
     }
 });
 
-// Helper to apply DP visually
-function applyProfilePicture(url) {
-    document.getElementById('dpContainer').style.backgroundImage = `url(${url})`;
-    document.getElementById('dpIcon').style.display = 'none';
+function applyProfilePicture(url, isEdit = false) {
+    if(isEdit) {
+        document.getElementById('editDpContainer').style.backgroundImage = `url(${url})`;
+        document.getElementById('editDpIcon').style.display = 'none';
+    } else {
+        document.getElementById('dpContainer').style.backgroundImage = `url(${url})`;
+        document.getElementById('dpIcon').style.display = 'none';
+    }
     currentUser.dpUrl = url;
 }
 
-// Check Database OR Local Browser Memory
 function checkUserAndNavigate(user) {
-    // 1. Check if browser remembers them from a previous session
     const localUpi = localStorage.getItem(`contripe_upi_${user.uid}`);
     const localDp = localStorage.getItem(`contripe_dp_${user.uid}`);
 
-    // 2. Try to ask Firebase
     db.collection("users").doc(user.uid).get()
         .then((doc) => {
             if (doc.exists && doc.data().upi) {
-                // Firebase has the data!
                 currentUser.upi = doc.data().upi;
+                currentUser.name = doc.data().name || currentUser.name;
                 if (doc.data().dp) applyProfilePicture(doc.data().dp);
                 navigateTo('dashboardScreen');
             } else if (localUpi) {
-                // Firebase failed, but Browser remembers!
                 currentUser.upi = localUpi;
                 if (localDp) applyProfilePicture(localDp);
                 navigateTo('dashboardScreen');
             } else {
-                // Totally new user
                 document.getElementById('profileName').value = currentUser.name;
                 navigateTo('profileScreen');
             }
         })
-        .catch((error) => {
-            console.error("DB Error:", error);
-            // If Firebase is blocked, trust the Browser Memory!
+        .catch(() => {
             if (localUpi) {
                 currentUser.upi = localUpi;
                 if (localDp) applyProfilePicture(localDp);
@@ -88,38 +89,29 @@ function handleEmailLogin() {
     const email = document.getElementById('loginEmail').value;
     const pass = document.getElementById('loginPassword').value;
     if(!email || !pass) return alert("Please enter email and password.");
-
-    auth.signInWithEmailAndPassword(email, pass)
-        .catch((error) => alert("Login Failed: " + error.message));
+    auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message));
 }
 
 function handleSignup() {
     const email = document.getElementById('signupEmail').value;
     const pass = document.getElementById('signupPassword').value;
     const name = document.getElementById('signupName').value;
-
     if(!email || !pass || !name) return alert("Please fill all fields.");
 
     auth.createUserWithEmailAndPassword(email, pass)
-        .then((userCredential) => {
-            userCredential.user.updateProfile({ displayName: name });
-        })
-        .catch((error) => alert("Signup Failed: " + error.message));
+        .then(res => res.user.updateProfile({ displayName: name }))
+        .catch(e => alert(e.message));
 }
 
 function handleGoogleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider)
-        .catch((error) => alert("Google Login Failed: " + error.message));
+    auth.signInWithPopup(provider).catch(e => alert(e.message));
 }
 
 function handlePasswordReset() {
     const email = document.getElementById('loginEmail').value;
-    if(!email) return alert("Please type your email address in the box first!");
-
-    auth.sendPasswordResetEmail(email)
-        .then(() => alert("Password reset link sent to your email!"))
-        .catch((error) => alert("Error: " + error.message));
+    if(!email) return alert("Please enter email first!");
+    auth.sendPasswordResetEmail(email).then(() => alert("Reset link sent!")).catch(e => alert(e.message));
 }
 
 function handleLogout() {
@@ -127,93 +119,112 @@ function handleLogout() {
         currentUser = { name: "User", upi: "", uid: null, dpUrl: null };
         document.getElementById('dpContainer').style.backgroundImage = 'none';
         document.getElementById('dpIcon').style.display = 'block';
+        closeSidebar();
     });
 }
 
 // ==========================================
-// 4. PROFILE SETUP & DP UPLOAD
+// 4. SIDEBAR & THEME LOGIC
 // ==========================================
-document.getElementById('dpContainer').addEventListener('click', () => {
-    document.getElementById('dpInput').click(); 
-});
+function openSidebar() {
+    document.getElementById('sidebarMenu').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('active');
+}
 
-document.getElementById('dpInput').addEventListener('change', function(event) {
+function closeSidebar() {
+    document.getElementById('sidebarMenu').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('active');
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('dark-theme');
+    const isDark = document.body.classList.contains('dark-theme');
+    localStorage.setItem('contripe_theme', isDark ? 'dark' : 'light');
+    
+    // Update Chart colors if it exists
+    if(expenseChart) {
+        Chart.defaults.color = isDark ? '#cbd5e1' : '#64748b';
+        expenseChart.update();
+    }
+    closeSidebar();
+}
+
+// ==========================================
+// 5. PROFILE SETUP & EDIT
+// ==========================================
+
+// Handle Image selection for BOTH screens
+function handleImageSelect(event, isEditScreen) {
     const file = event.target.files[0];
     if (file) {
         const reader = new FileReader();
-        reader.onload = function(e) {
-            applyProfilePicture(e.target.result);
-        }
+        reader.onload = function(e) { applyProfilePicture(e.target.result, isEditScreen); }
         reader.readAsDataURL(file);
     }
-});
+}
 
-// Save Profile (With LocalStorage Backup)
-document.getElementById('saveProfileBtn').addEventListener('click', () => {
-    const upi = document.getElementById('profileUpi').value;
+document.getElementById('dpContainer').addEventListener('click', () => document.getElementById('dpInput').click());
+document.getElementById('dpInput').addEventListener('change', (e) => handleImageSelect(e, false));
 
-    if (!upi.includes('@')) {
-        return alert("Please enter a valid UPI ID (e.g. name@paytm)");
-    }
+document.getElementById('editDpContainer').addEventListener('click', () => document.getElementById('editDpInput').click());
+document.getElementById('editDpInput').addEventListener('change', (e) => handleImageSelect(e, true));
 
-    if (!currentUser.uid) {
-        return alert("Session lost! Please refresh the page.");
-    }
+// Open Edit Screen
+function openEditProfile() {
+    closeSidebar();
+    document.getElementById('editName').value = currentUser.name;
+    document.getElementById('editUpi').value = currentUser.upi;
+    if (currentUser.dpUrl) applyProfilePicture(currentUser.dpUrl, true);
+    navigateTo('editProfileScreen');
+}
 
-    const btn = document.getElementById('saveProfileBtn');
-    const originalText = btn.textContent;
-    btn.textContent = "Saving to Server...";
-    btn.disabled = true;
+// The Universal Save Function
+function saveProfileData(nameInputId, upiInputId, btnId) {
+    const upi = document.getElementById(upiInputId).value;
+    const name = document.getElementById(nameInputId).value || currentUser.name;
+
+    if (!upi.includes('@')) return alert("Enter a valid UPI ID");
+    if (!currentUser.uid) return alert("Session lost! Refresh page.");
+
+    const btn = document.getElementById(btnId);
+    const ogText = btn.textContent;
+    btn.textContent = "Saving..."; btn.disabled = true;
 
     currentUser.upi = upi;
+    currentUser.name = name;
 
-    // --- NEW: Save directly to the browser's memory immediately! ---
-    localStorage.setItem(`contripe_upi_${currentUser.uid}`, currentUser.upi);
-    if (currentUser.dpUrl) {
-        localStorage.setItem(`contripe_dp_${currentUser.uid}`, currentUser.dpUrl);
-    }
+    localStorage.setItem(`contripe_upi_${currentUser.uid}`, upi);
+    if(currentUser.dpUrl) localStorage.setItem(`contripe_dp_${currentUser.uid}`, currentUser.dpUrl);
 
-    // Emergency Bypass
     let isSaved = false;
     const emergencyTimeout = setTimeout(() => {
         if (!isSaved) {
-            console.warn("Bypassing to Dashboard! Local memory engaged.");
-            btn.textContent = originalText;
-            btn.disabled = false;
+            btn.textContent = ogText; btn.disabled = false;
             navigateTo('dashboardScreen');
         }
     }, 3000);
 
-    // Try to save to Firestore
-    try {
-        db.collection("users").doc(currentUser.uid).set({
-            name: currentUser.name || "User",
-            upi: currentUser.upi,
-            dp: currentUser.dpUrl || null 
-        }).then(() => {
-            isSaved = true;
-            clearTimeout(emergencyTimeout);
-            btn.textContent = originalText;
-            btn.disabled = false;
-            navigateTo('dashboardScreen');
-        }).catch((error) => {
-            isSaved = true;
-            clearTimeout(emergencyTimeout);
-            btn.textContent = originalText;
-            btn.disabled = false;
-            navigateTo('dashboardScreen'); 
-        });
-    } catch (err) {
-        isSaved = true;
-        clearTimeout(emergencyTimeout);
-        btn.textContent = originalText;
-        btn.disabled = false;
+    db.collection("users").doc(currentUser.uid).set({
+        name: currentUser.name,
+        upi: currentUser.upi,
+        dp: currentUser.dpUrl || null 
+    }).then(() => {
+        isSaved = true; clearTimeout(emergencyTimeout);
+        btn.textContent = ogText; btn.disabled = false;
         navigateTo('dashboardScreen');
-    }
-});
+    }).catch(() => {
+        isSaved = true; clearTimeout(emergencyTimeout);
+        btn.textContent = ogText; btn.disabled = false;
+        navigateTo('dashboardScreen'); 
+    });
+}
+
+document.getElementById('saveProfileBtn').addEventListener('click', () => saveProfileData('profileName', 'profileUpi', 'saveProfileBtn'));
+document.getElementById('updateProfileBtn').addEventListener('click', () => saveProfileData('editName', 'editUpi', 'updateProfileBtn'));
+
 
 // ==========================================
-// 5. NAVIGATION & DASHBOARD
+// 6. NAVIGATION & APP LOGIC
 // ==========================================
 function navigateTo(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -222,18 +233,13 @@ function navigateTo(screenId) {
     if (screenId === 'dashboardScreen') {
         document.getElementById('dashName').textContent = currentUser.name.split(' ')[0] || "User";
     }
-    if (screenId === 'trackerScreen') {
-        initChart();
-    }
+    if (screenId === 'trackerScreen') initChart();
 }
 
-// ==========================================
-// 6. TRIP CONTRI LOGIC
-// ==========================================
+// Trip Contri Logic
 document.getElementById('addBtn').addEventListener('click', () => {
     const name = document.getElementById('expenseName').value || "Expense";
     const amount = parseFloat(document.getElementById('expenseAmount').value);
-
     if (amount > 0) {
         contriExpenses.push({ name, amount });
         document.getElementById('expenseName').value = '';
@@ -247,7 +253,6 @@ document.getElementById('friendCount').addEventListener('input', updateContriUI)
 function updateContriUI() {
     const list = document.getElementById('expenseList');
     list.innerHTML = '';
-    
     let total = 0;
     contriExpenses.forEach(exp => {
         total += exp.amount;
@@ -255,15 +260,12 @@ function updateContriUI() {
         li.innerHTML = `<span>${exp.name}</span> <strong>₹${exp.amount.toFixed(2)}</strong>`;
         list.appendChild(li);
     });
-
     document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
-
     let friends = parseInt(document.getElementById('friendCount').value) || 1;
-    let perPerson = total / friends;
-    
-    document.getElementById('perPersonAmount').textContent = `₹${perPerson.toFixed(2)}`;
+    document.getElementById('perPersonAmount').textContent = `₹${(total / friends).toFixed(2)}`;
 }
 
+// QR Code Generator
 document.getElementById('payBox').addEventListener('click', () => {
     let friends = parseInt(document.getElementById('friendCount').value) || 1;
     const total = contriExpenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -275,29 +277,23 @@ document.getElementById('payBox').addEventListener('click', () => {
     document.getElementById('modalAmountDisplay').textContent = `₹${perPerson}`;
 
     const upiString = `upi://pay?pa=${currentUser.upi}&pn=${currentUser.name}&am=${perPerson}&cu=INR`;
-    
     document.getElementById('qrcode').innerHTML = '';
+    
+    // Always render QR code with a white background so it scans successfully on dark mode!
     qrCodeInstance = new QRCode(document.getElementById("qrcode"), {
-        text: upiString,
-        width: 180,
-        height: 180,
-        colorDark : "#0f172a",
-        colorLight : "#f8fafc",
-        correctLevel : QRCode.CorrectLevel.H
+        text: upiString, width: 180, height: 180,
+        colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
     });
     
     document.getElementById('qrModal').style.display = 'flex';
 });
 
-// ==========================================
-// 7. EXPENSE TRACKER & CHART.JS
-// ==========================================
+// Tracker Logic
 document.getElementById('addTrackerBtn').addEventListener('click', () => {
-    const category = document.getElementById('trackerCategory').value;
-    const amount = parseFloat(document.getElementById('trackerAmount').value);
-
-    if (amount > 0) {
-        trackerData[category] += amount;
+    const cat = document.getElementById('trackerCategory').value;
+    const amt = parseFloat(document.getElementById('trackerAmount').value);
+    if (amt > 0) {
+        trackerData[cat] += amt;
         document.getElementById('trackerAmount').value = '';
         updateChart();
     }
@@ -306,6 +302,8 @@ document.getElementById('addTrackerBtn').addEventListener('click', () => {
 function initChart() {
     const ctx = document.getElementById('expenseChart').getContext('2d');
     if (expenseChart) expenseChart.destroy();
+    
+    Chart.defaults.color = document.body.classList.contains('dark-theme') ? '#cbd5e1' : '#64748b';
 
     expenseChart = new Chart(ctx, {
         type: 'doughnut',
@@ -317,12 +315,7 @@ function initChart() {
                 borderWidth: 0
             }]
         },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom' }
-            }
-        }
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
 }
 
