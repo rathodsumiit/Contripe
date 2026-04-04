@@ -1,5 +1,5 @@
 // ==========================================
-// 1. FIREBASE CONFIGURATION (Your Exact Keys)
+// 1. FIREBASE CONFIGURATION
 // ==========================================
 const firebaseConfig = {
     apiKey: "AIzaSyASRP_nndOsHzJcrJkAuUUkrIPUvKCLAlo",
@@ -19,24 +19,22 @@ const db = firebase.firestore();
 // ==========================================
 // 2. APP STATE
 // ==========================================
-let currentUser = { name: "User", upi: "", uid: null };
+let currentUser = { name: "User", upi: "", uid: null, dpUrl: null };
 let contriExpenses = [];
 let trackerData = { "Food": 0, "Travel": 0, "Stay": 0, "Misc": 0 };
 let expenseChart; 
 let qrCodeInstance = null;
 
 // ==========================================
-// 3. AUTHENTICATION LOGIC (Direct Routing)
+// 3. AUTHENTICATION LOGIC
 // ==========================================
-
-// Global Listener (Keeps you logged in if you refresh, boots you to login if not)
 auth.onAuthStateChanged((user) => {
     if (!user) {
         navigateTo('loginScreen');
     }
 });
 
-// Helper function to check DB and move screens instantly
+// Helper to check DB and prevent silent freezing
 function checkUserAndNavigate(user) {
     db.collection("users").doc(user.uid).get()
         .then((doc) => {
@@ -51,7 +49,7 @@ function checkUserAndNavigate(user) {
         .catch((error) => {
             console.error("DB Error:", error);
             document.getElementById('profileName').value = currentUser.name;
-            navigateTo('profileScreen'); // Move forward even if DB fails
+            navigateTo('profileScreen'); 
         });
 }
 
@@ -62,7 +60,6 @@ function handleEmailLogin() {
 
     auth.signInWithEmailAndPassword(email, pass)
         .then((userCredential) => {
-            // SUCCESS! Force the screen to change
             currentUser.name = userCredential.user.displayName || "User";
             currentUser.uid = userCredential.user.uid;
             checkUserAndNavigate(userCredential.user);
@@ -79,7 +76,6 @@ function handleSignup() {
 
     auth.createUserWithEmailAndPassword(email, pass)
         .then((userCredential) => {
-            // Give the user a name, then instantly force the screen change
             userCredential.user.updateProfile({ displayName: name }).then(() => {
                 currentUser.name = name;
                 currentUser.uid = userCredential.user.uid;
@@ -94,7 +90,6 @@ function handleGoogleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider)
         .then((result) => {
-            // SUCCESS! Force the screen to change
             currentUser.name = result.user.displayName || "User";
             currentUser.uid = result.user.uid;
             checkUserAndNavigate(result.user);
@@ -113,31 +108,64 @@ function handlePasswordReset() {
 
 function handleLogout() {
     auth.signOut().then(() => {
-        currentUser = { name: "User", upi: "", uid: null };
+        currentUser = { name: "User", upi: "", uid: null, dpUrl: null };
+        document.getElementById('dpContainer').style.backgroundImage = 'none';
+        document.getElementById('dpIcon').style.display = 'block';
         navigateTo('loginScreen');
     });
 }
 
 // ==========================================
-// 4. PROFILE SETUP & FIRESTORE
+// 4. PROFILE SETUP & DP UPLOAD
 // ==========================================
+
+// Handle Profile Picture Upload
+document.getElementById('dpContainer').addEventListener('click', () => {
+    document.getElementById('dpInput').click(); 
+});
+
+document.getElementById('dpInput').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dpContainer = document.getElementById('dpContainer');
+            dpContainer.style.backgroundImage = `url(${e.target.result})`;
+            document.getElementById('dpIcon').style.display = 'none';
+            currentUser.dpUrl = e.target.result; 
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+// Save Profile
 document.getElementById('saveProfileBtn').addEventListener('click', () => {
     const upi = document.getElementById('profileUpi').value;
 
     if (!upi.includes('@')) {
-        alert("Please enter a valid UPI ID (e.g. name@paytm)");
-        return;
+        return alert("Please enter a valid UPI ID (e.g. name@paytm)");
     }
+
+    const btn = document.getElementById('saveProfileBtn');
+    const originalText = btn.textContent;
+    btn.textContent = "Saving to Server...";
+    btn.disabled = true;
 
     currentUser.upi = upi;
 
-    // Save their UPI ID securely to the database
     if (currentUser.uid) {
         db.collection("users").doc(currentUser.uid).set({
             name: currentUser.name,
-            upi: currentUser.upi
+            upi: currentUser.upi,
+            dp: currentUser.dpUrl || null 
         }).then(() => {
-            navigateTo('dashboardScreen');
+            btn.textContent = originalText;
+            btn.disabled = false;
+            navigateTo('dashboardScreen'); 
+        }).catch((error) => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+            alert("Database Error: " + error.message + "\n\nMake sure Firestore Rules are set to 'Test Mode'");
         });
     }
 });
@@ -205,10 +233,8 @@ document.getElementById('payBox').addEventListener('click', () => {
     document.getElementById('receiverNameDisplay').textContent = currentUser.name;
     document.getElementById('modalAmountDisplay').textContent = `₹${perPerson}`;
 
-    // Create the UPI payment link
     const upiString = `upi://pay?pa=${currentUser.upi}&pn=${currentUser.name}&am=${perPerson}&cu=INR`;
     
-    // Generate QR Code dynamically
     document.getElementById('qrcode').innerHTML = '';
     qrCodeInstance = new QRCode(document.getElementById("qrcode"), {
         text: upiString,
