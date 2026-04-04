@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContriPe</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        
+        <section id="loginScreen" class="screen active">
+            <div class="brand-header">
+                <h1>ContriPe</h1>
+                <p>Split smarter, pay faster.</p>
+            </div>
+            <div class="form-group">
+                <input type="email" id="loginEmail" placeholder="Email Address">
+                <input type="password" id="loginPassword" placeholder="Password">
+                
+                <div style="text-align: right; margin-top: -5px; margin-bottom: 5px;">
+                    <a href="#" class="auth-link" onclick="alert('Reset link sent to your email!')">Forgot Password?</a>
+                </div>
+
+                <button class="primary-btn" onclick="navigateTo('profileScreen')">Login</button>
+            </div>
+
+            <div class="auth-toggle-container">
+                <p class="auth-text">Don't have an account? <a href="#" class="auth-link" onclick="navigateTo('signupScreen')">Create one</a></p>
+            </div>
+
+            <div class="divider"><span>OR</span></div>
+            
+            <button class="google-btn" onclick="navigateTo('profileScreen')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="22px" height="22px">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                Continue with Google
+            </button>
+        </section>
+
+        <section id="signupScreen" class="screen">
+            <div class="brand-header">
+                <h1>Create Account</h1>
+                <p>Join ContriPe today.</p>
+            </div>
+            <div class="form-group">
+                <input type="text" id="signupName" placeholder="Full Name">
+                <input type="email" id="signupEmail" placeholder="Email Address">
+                <input type="password" id="signupPassword" placeholder="Create Password">
+                <button class="primary-btn" onclick="handleSignup()">Sign Up</button>
+            </div>
+            <div class="auth-toggle-container">
+                <p class="auth-text">Already have an account? <a href="#" class="auth-link" onclick="navigateTo('loginScreen')">Login</a></p>
+            </div>
+        </section>
+
+        <section id="profileScreen" class="screen">
+            <header class="top-nav">
+                <h2>Set Up Profile</h2>
+            </header>
+            <div class="profile-pic-placeholder">
+                <span>📷</span>
+            </div>
+            <div class="form-group">
+                <input type="text" id="profileName" placeholder="Full Name">
+                <input type="text" id="profileUpi" placeholder="Your UPI ID (Required)">
+                <button class="primary-btn" id="saveProfileBtn">Save & Continue</button>
+            </div>
+        </section>
+
+        <section id="dashboardScreen" class="screen">
+            <header class="top-nav">
+                <h2>Hi, <span id="dashName">User</span> 👋</h2>
+            </header>
+            <div class="dashboard-cards">
+                <div class="dash-card" onclick="navigateTo('contriScreen')">
+                    <h3>🤝 Trip Contri</h3>
+                    <p>Split bills and generate UPI QR</p>
+                </div>
+                <div class="dash-card blue-bg" onclick="navigateTo('trackerScreen')">
+                    <h3>📊 Expense Tracker</h3>
+                    <p>Analyze your personal spending</p>
+                </div>
+            </div>
+            <button class="secondary-btn" onclick="logout()" style="margin-top: 30px; width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #ddd; background: white; font-weight: bold; color: #e74c3c; cursor: pointer;">Logout</button>
+        </section>
+
+        <section id="contriScreen" class="screen">
+            <header class="top-nav">
+                <button class="back-btn" onclick="navigateTo('dashboardScreen')">←</button>
+                <h2>Trip Contri</h2>
+            </header>
+            
+            <div class="input-group" style="margin-top: 20px;">
+                <input type="text" id="expenseName" placeholder="What was it for?">
+                <input type="number" id="expenseAmount" placeholder="Amount (₹)">
+                <button class="primary-btn" id="addBtn">Add</button>
+            </div>
+
+            <ul id="expenseList" class="data-list" style="list-style: none; margin-top: 15px; max-height: 150px; overflow-y: auto;"></ul>
+
+            <div class="summary-card">
+                <h3>Total Trip Cost</h3>
+                <h2 id="totalAmount">₹0.00</h2>
+            </div>
+            
+            <div class="split-controls">
+                <label>How many friends?</label>
+                <input type="number" id="friendCount" value="1" min="1">
+            </div>
+
+            <div class="summary-card highlight" id="payBox">
+                <h3>Per Person Contribution</h3>
+                <h2 id="perPersonAmount">₹0.00</h2>
+                <p>Tap to generate your QR code</p>
+            </div>
+        </section>
+
+        <section id="trackerScreen" class="screen">
+            <header class="top-nav">
+                <button class="back-btn" onclick="navigateTo('dashboardScreen')">←</button>
+                <h2>Personal Tracker</h2>
+            </header>
+
+            <div class="chart-container">
+                <canvas id="expenseChart"></canvas>
+            </div>
+
+            <div class="input-group" style="margin-top: 20px;">
+                <select id="trackerCategory">
+                    <option value="Food">🍔 Food</option>
+                    <option value="Travel">🚕 Travel</option>
+                    <option value="Stay">🏨 Stay</option>
+                    <option value="Misc">🛍️ Misc</option>
+                </select>
+                <input type="number" id="trackerAmount" placeholder="Amount (₹)">
+                <button class="primary-btn blue-bg" id="addTrackerBtn">Log</button>
+            </div>
+        </section>
+
+    </div>
+
+    <div id="qrModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="document.getElementById('qrModal').style.display='none'">&times;</span>
+            <h2>Scan to Pay</h2>
+            <p>Paying: <strong id="receiverNameDisplay">Name</strong></p>
+            <p>Amount: <strong id="modalAmountDisplay">₹0.00</strong></p>
+            <div class="qr-container">
+                <img id="qrImage" src="" alt="UPI QR">
+            </div>
+            <p class="scan-hint">Use any UPI App</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
