@@ -24,7 +24,6 @@ let trackerData = { "Food": 0, "Travel": 0, "Stay": 0, "Misc": 0 };
 let expenseChart; 
 let qrCodeInstance = null;
 
-// Load Theme from Memory instantly
 if (localStorage.getItem('contripe_theme') === 'dark') {
     document.body.classList.add('dark-theme');
 }
@@ -53,6 +52,21 @@ function applyProfilePicture(url, isEdit = false) {
     currentUser.dpUrl = url;
 }
 
+// Routes users directly to the Tour OR the Dashboard
+function routeAfterAuth() {
+    const hasSeenTour = localStorage.getItem(`contripe_tour_${currentUser.uid}`);
+    if (!hasSeenTour) {
+        // Show Tour! Extract just their first name.
+        document.getElementById('welcomeName').textContent = currentUser.name.split(' ')[0] || "User";
+        currentSlideIndex = 0;
+        updateSlider();
+        navigateTo('onboardingScreen');
+    } else {
+        // Already seen it, go to dashboard.
+        navigateTo('dashboardScreen');
+    }
+}
+
 function checkUserAndNavigate(user) {
     const localUpi = localStorage.getItem(`contripe_upi_${user.uid}`);
     const localDp = localStorage.getItem(`contripe_dp_${user.uid}`);
@@ -63,11 +77,11 @@ function checkUserAndNavigate(user) {
                 currentUser.upi = doc.data().upi;
                 currentUser.name = doc.data().name || currentUser.name;
                 if (doc.data().dp) applyProfilePicture(doc.data().dp);
-                navigateTo('dashboardScreen');
+                routeAfterAuth();
             } else if (localUpi) {
                 currentUser.upi = localUpi;
                 if (localDp) applyProfilePicture(localDp);
-                navigateTo('dashboardScreen');
+                routeAfterAuth();
             } else {
                 document.getElementById('profileName').value = currentUser.name;
                 navigateTo('profileScreen');
@@ -77,7 +91,7 @@ function checkUserAndNavigate(user) {
             if (localUpi) {
                 currentUser.upi = localUpi;
                 if (localDp) applyProfilePicture(localDp);
-                navigateTo('dashboardScreen');
+                routeAfterAuth();
             } else {
                 document.getElementById('profileName').value = currentUser.name;
                 navigateTo('profileScreen'); 
@@ -124,7 +138,46 @@ function handleLogout() {
 }
 
 // ==========================================
-// 4. SIDEBAR & THEME LOGIC
+// 4. ANIMATED APP TOUR LOGIC
+// ==========================================
+let currentSlideIndex = 0;
+
+function nextSlide() {
+    if (currentSlideIndex < 2) {
+        currentSlideIndex++;
+        updateSlider();
+    } else {
+        finishTour();
+    }
+}
+
+function updateSlider() {
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.dot');
+    const btn = document.getElementById('nextSlideBtn');
+
+    // Slide animation
+    slides.forEach(s => s.style.transform = `translateX(-${currentSlideIndex * 100}%)`);
+
+    // Update Dots
+    dots.forEach((d, i) => d.classList.toggle('active', i === currentSlideIndex));
+
+    // Update Button Text
+    if (currentSlideIndex === 2) {
+        btn.textContent = "Let's Go! 🚀";
+    } else {
+        btn.textContent = "Next ➔";
+    }
+}
+
+function finishTour() {
+    // Save to memory so it never shows again for this user!
+    localStorage.setItem(`contripe_tour_${currentUser.uid}`, 'true');
+    navigateTo('dashboardScreen');
+}
+
+// ==========================================
+// 5. SIDEBAR & THEME LOGIC
 // ==========================================
 function openSidebar() {
     document.getElementById('sidebarMenu').classList.add('open');
@@ -141,7 +194,6 @@ function toggleTheme() {
     const isDark = document.body.classList.contains('dark-theme');
     localStorage.setItem('contripe_theme', isDark ? 'dark' : 'light');
     
-    // Update Chart colors if it exists
     if(expenseChart) {
         Chart.defaults.color = isDark ? '#cbd5e1' : '#64748b';
         expenseChart.update();
@@ -150,10 +202,8 @@ function toggleTheme() {
 }
 
 // ==========================================
-// 5. PROFILE SETUP & EDIT
+// 6. PROFILE SETUP & EDIT
 // ==========================================
-
-// Handle Image selection for BOTH screens
 function handleImageSelect(event, isEditScreen) {
     const file = event.target.files[0];
     if (file) {
@@ -169,7 +219,6 @@ document.getElementById('dpInput').addEventListener('change', (e) => handleImage
 document.getElementById('editDpContainer').addEventListener('click', () => document.getElementById('editDpInput').click());
 document.getElementById('editDpInput').addEventListener('change', (e) => handleImageSelect(e, true));
 
-// Open Edit Screen
 function openEditProfile() {
     closeSidebar();
     document.getElementById('editName').value = currentUser.name;
@@ -178,8 +227,7 @@ function openEditProfile() {
     navigateTo('editProfileScreen');
 }
 
-// The Universal Save Function
-function saveProfileData(nameInputId, upiInputId, btnId) {
+function saveProfileData(nameInputId, upiInputId, btnId, isNewProfile = false) {
     const upi = document.getElementById(upiInputId).value;
     const name = document.getElementById(nameInputId).value || currentUser.name;
 
@@ -200,7 +248,7 @@ function saveProfileData(nameInputId, upiInputId, btnId) {
     const emergencyTimeout = setTimeout(() => {
         if (!isSaved) {
             btn.textContent = ogText; btn.disabled = false;
-            navigateTo('dashboardScreen');
+            if(isNewProfile) routeAfterAuth(); else navigateTo('dashboardScreen');
         }
     }, 3000);
 
@@ -211,20 +259,20 @@ function saveProfileData(nameInputId, upiInputId, btnId) {
     }).then(() => {
         isSaved = true; clearTimeout(emergencyTimeout);
         btn.textContent = ogText; btn.disabled = false;
-        navigateTo('dashboardScreen');
+        if(isNewProfile) routeAfterAuth(); else navigateTo('dashboardScreen');
     }).catch(() => {
         isSaved = true; clearTimeout(emergencyTimeout);
         btn.textContent = ogText; btn.disabled = false;
-        navigateTo('dashboardScreen'); 
+        if(isNewProfile) routeAfterAuth(); else navigateTo('dashboardScreen'); 
     });
 }
 
-document.getElementById('saveProfileBtn').addEventListener('click', () => saveProfileData('profileName', 'profileUpi', 'saveProfileBtn'));
-document.getElementById('updateProfileBtn').addEventListener('click', () => saveProfileData('editName', 'editUpi', 'updateProfileBtn'));
+document.getElementById('saveProfileBtn').addEventListener('click', () => saveProfileData('profileName', 'profileUpi', 'saveProfileBtn', true));
+document.getElementById('updateProfileBtn').addEventListener('click', () => saveProfileData('editName', 'editUpi', 'updateProfileBtn', false));
 
 
 // ==========================================
-// 6. NAVIGATION & APP LOGIC
+// 7. NAVIGATION & CORE APP LOGIC
 // ==========================================
 function navigateTo(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -265,7 +313,6 @@ function updateContriUI() {
     document.getElementById('perPersonAmount').textContent = `₹${(total / friends).toFixed(2)}`;
 }
 
-// QR Code Generator
 document.getElementById('payBox').addEventListener('click', () => {
     let friends = parseInt(document.getElementById('friendCount').value) || 1;
     const total = contriExpenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -278,8 +325,6 @@ document.getElementById('payBox').addEventListener('click', () => {
 
     const upiString = `upi://pay?pa=${currentUser.upi}&pn=${currentUser.name}&am=${perPerson}&cu=INR`;
     document.getElementById('qrcode').innerHTML = '';
-    
-    // Always render QR code with a white background so it scans successfully on dark mode!
     qrCodeInstance = new QRCode(document.getElementById("qrcode"), {
         text: upiString, width: 180, height: 180,
         colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
