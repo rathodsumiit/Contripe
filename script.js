@@ -60,6 +60,19 @@ function routeAfterAuth() {
     }
 }
 
+// ==========================================
+// NEW: THE "LONG-TERM MEMORY" SYNC FUNCTION
+// ==========================================
+function syncDataToCloud() {
+    if (!currentUser.uid) return;
+    
+    // Silently merge our local arrays with the cloud database
+    db.collection("users").doc(currentUser.uid).set({
+        trackerTransactions: trackerTransactions,
+        contriExpenses: contriExpenses
+    }, { merge: true }).catch((error) => console.error("Cloud Sync Error:", error));
+}
+
 function checkUserAndNavigate(user) {
     const localUpi = localStorage.getItem(`contripe_upi_${user.uid}`);
     const localDp = localStorage.getItem(`contripe_dp_${user.uid}`);
@@ -70,6 +83,16 @@ function checkUserAndNavigate(user) {
                 currentUser.upi = doc.data().upi;
                 currentUser.name = doc.data().name || currentUser.name;
                 if (doc.data().dp) applyProfilePicture(doc.data().dp);
+                
+                // NEW: Load Cloud Data into our arrays!
+                if (doc.data().trackerTransactions) trackerTransactions = doc.data().trackerTransactions;
+                if (doc.data().contriExpenses) contriExpenses = doc.data().contriExpenses;
+                
+                // Rebuild UI invisibly before showing dashboard
+                updateTrackerUI();
+                updateContriUI();
+                updateDashboardCard();
+
                 routeAfterAuth();
             } else if (localUpi) {
                 currentUser.upi = localUpi;
@@ -124,6 +147,8 @@ function handlePasswordReset() {
 function handleLogout() {
     auth.signOut().then(() => {
         currentUser = { name: "User", upi: "", uid: null, dpUrl: null };
+        trackerTransactions = []; // Wipe local memory on logout
+        contriExpenses = [];      // Wipe local memory on logout
         document.getElementById('dpContainer').style.backgroundImage = 'none';
         document.getElementById('dpIcon').style.display = 'block';
         closeSidebar();
@@ -232,7 +257,7 @@ function saveProfileData(nameInputId, upiInputId, btnId, isNewProfile = false) {
         name: currentUser.name,
         upi: currentUser.upi,
         dp: currentUser.dpUrl || null 
-    }).then(() => {
+    }, { merge: true }).then(() => {
         isSaved = true; clearTimeout(emergencyTimeout);
         btn.textContent = ogText; btn.disabled = false;
         if(isNewProfile) routeAfterAuth(); else navigateTo('dashboardScreen');
@@ -248,7 +273,7 @@ document.getElementById('updateProfileBtn').addEventListener('click', () => save
 
 
 // ==========================================
-// 7. NAVIGATION & CORE APP LOGIC
+// 7. NAVIGATION & DASHBOARD LOGIC
 // ==========================================
 function navigateTo(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -257,7 +282,7 @@ function navigateTo(screenId) {
     if (screenId === 'dashboardScreen') {
         document.getElementById('dashName').textContent = currentUser.name.split(' ')[0] || "User";
         document.getElementById('dashCardName').textContent = currentUser.name;
-        updateDashboardCard(); // Refresh card data when hitting dashboard
+        updateDashboardCard(); 
     }
     
     if (screenId === 'trackerScreen') {
@@ -268,14 +293,10 @@ function navigateTo(screenId) {
     }
 }
 
-// ==========================================
-// NEW: Update Dashboard ContriPe Card
-// ==========================================
 function updateDashboardCard() {
     let totalInc = 0;
     let totalExp = 0;
 
-    // Calculate totals across ALL transactions
     trackerTransactions.forEach(tx => {
         if (tx.type === 'credit') {
             totalInc += tx.amount;
@@ -286,14 +307,12 @@ function updateDashboardCard() {
 
     const netBalance = totalInc - totalExp;
 
-    // Update Card UI
     document.getElementById('dashIncome').textContent = `₹${totalInc.toFixed(2)}`;
     document.getElementById('dashExpense').textContent = `₹${totalExp.toFixed(2)}`;
     
     const balanceElem = document.getElementById('dashNetBalance');
     balanceElem.textContent = `₹${netBalance.toFixed(2)}`;
     
-    // Dynamic Glow and Color for Balance
     if (netBalance > 0) {
         balanceElem.className = "text-green";
         balanceElem.style.textShadow = "0 0 20px rgba(0, 230, 118, 0.3)";
@@ -318,6 +337,7 @@ document.getElementById('addBtn').addEventListener('click', () => {
         document.getElementById('expenseName').value = '';
         document.getElementById('expenseAmount').value = '';
         updateContriUI();
+        syncDataToCloud(); // Save to Firebase!
     }
 });
 
@@ -327,6 +347,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
         contriExpenses = [];
         document.getElementById('friendCount').value = 1; 
         updateContriUI();
+        syncDataToCloud(); // Save to Firebase!
     }
 });
 
@@ -335,6 +356,7 @@ document.getElementById('friendCount').addEventListener('input', updateContriUI)
 function removeContriExpense(index) {
     contriExpenses.splice(index, 1);
     updateContriUI(); 
+    syncDataToCloud(); // Save to Firebase!
 }
 
 function updateContriUI() {
@@ -412,7 +434,8 @@ document.getElementById('addTrackerBtn').addEventListener('click', () => {
         document.getElementById('trackerName').value = '';
         document.getElementById('trackerAmount').value = '';
         updateTrackerUI();
-        updateDashboardCard(); // Keep dashboard in sync
+        updateDashboardCard(); 
+        syncDataToCloud(); // Save to Firebase!
     }
 });
 
@@ -422,6 +445,7 @@ document.getElementById('resetTrackerBtn').addEventListener('click', () => {
         trackerTransactions = [];
         updateTrackerUI();
         updateDashboardCard();
+        syncDataToCloud(); // Save to Firebase!
     }
 });
 
@@ -429,6 +453,7 @@ function removeTrackerItem(id) {
     trackerTransactions = trackerTransactions.filter(t => t.id !== id);
     updateTrackerUI();
     updateDashboardCard();
+    syncDataToCloud(); // Save to Firebase!
 }
 
 function updateTrackerUI() {
