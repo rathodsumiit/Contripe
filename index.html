@@ -4,57 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ContriPe.</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
-    <div class="app-container">
-        
-        <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
-        <aside id="sidebarMenu" class="sidebar">
-            <div class="sidebar-header">
-                <h3>Settings</h3>
-                <button class="icon-btn" onclick="closeSidebar()">&times;</button>
-            </div>
-            <ul class="sidebar-links">
-                <li onclick="openEditProfile()">👤 Edit Profile</li>
-                <li onclick="handleLogout()" class="logout-link">🚪 Logout</li>
-            </ul>
-        </aside>
+<div class="app-container">
 
-        <section id="loginScreen" class="screen active">
-            <div class="brand-header">
-                <h1>ContriPe.</h1>
-                <p class="tagline">Split Smarter, Pay Faster</p>
-                <p class="crafted-by">Crafted By SR</p>
+    <!-- NOISE OVERLAY -->
+    <div class="noise-overlay"></div>
+
+    <!-- SIDEBAR OVERLAY -->
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+    <aside id="sidebarMenu" class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <span class="sidebar-brand-dot"></span>
+                <span>Settings</span>
             </div>
+            <button class="icon-btn" onclick="closeSidebar()">✕</button>
+        </div>
+        <div class="sidebar-user">
+            <div class="sidebar-avatar" id="sidebarAvatar">U</div>
+            <div>
+                <p class="sidebar-user-name" id="sidebarName">User</p>
+                <p class="sidebar-user-upi" id="sidebarUpi">upi@bank</p>
+            </div>
+        </div>
+        <ul class="sidebar-links">
+            <li onclick="openEditProfile()">
+                <span class="sidebar-icon">👤</span>
+                <span>Edit Profile</span>
+                <span class="sidebar-arrow">›</span>
+            </li>
+            <li onclick="handleLogout()" class="logout-link">
+                <span class="sidebar-icon">🚪</span>
+                <span>Logout</span>
+                <span class="sidebar-arrow">›</span>
+            </li>
+        </ul>
+        <div class="sidebar-footer">ContriPe. v2.0 · Crafted by SR</div>
+    </aside>
+
+    <!-- ===== LOGIN SCREEN ===== -->
+    <section id="loginScreen" class="screen active">
+        <div class="auth-bg-blob blob-1"></div>
+        <div class="auth-bg-blob blob-2"></div>
+        <div class="brand-header">
+            <div class="brand-logo-wrap">
+                <div class="brand-logo-icon">C</div>
+            </div>
+            <h1 class="brand-name">ContriPe<span class="brand-dot">.</span></h1>
+            <p class="tagline">Split Smarter. Pay Faster.</p>
+        </div>
+        <div class="auth-card">
             <div class="form-group">
-                <input type="email" id="loginEmail" placeholder="Email Address">
-                <input type="password" id="loginPassword" placeholder="Password">
-                
-                <div style="text-align: right; margin-top: -5px; margin-bottom: 5px;">
-                    <a href="#" class="auth-link" onclick="handlePasswordReset()">Forgot Password?</a>
+                <div class="input-wrap">
+                    <span class="input-icon">✉</span>
+                    <input type="email" id="loginEmail" placeholder="Email address">
                 </div>
-
-                <button class="primary-btn" onclick="handleEmailLogin()">Login</button>
+                <div class="input-wrap">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="loginPassword" placeholder="Password">
+                </div>
+                <div class="forgot-wrap">
+                    <a href="#" class="auth-link" onclick="handlePasswordReset()">Forgot password?</a>
+                </div>
+                <button class="primary-btn" onclick="handleEmailLogin()">
+                    <span>Sign In</span>
+                    <span class="btn-arrow">→</span>
+                </button>
             </div>
-
-            <div class="auth-toggle-container">
-                <p class="auth-text">Don't have an account? <a href="#" class="auth-link" onclick="navigateTo('signupScreen')">Create one</a></p>
-            </div>
-
-            <div class="divider"><span>OR</span></div>
-            
+            <div class="divider"><span>or</span></div>
             <button class="google-btn" onclick="handleGoogleLogin()">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="22px" height="22px">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20">
                     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
                     <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
                     <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
@@ -62,250 +89,394 @@
                 </svg>
                 Continue with Google
             </button>
-        </section>
+            <p class="auth-text">New here? <a href="#" class="auth-link" onclick="navigateTo('signupScreen')">Create account →</a></p>
+        </div>
+        <p class="crafted-by">Crafted By SR</p>
+    </section>
 
-        <section id="signupScreen" class="screen">
-            <div class="brand-header">
-                <h1>Create Account</h1>
-                <p class="tagline">Join ContriPe today.</p>
-                <p class="crafted-by">Crafted By SR</p>
-            </div>
+    <!-- ===== SIGNUP SCREEN ===== -->
+    <section id="signupScreen" class="screen">
+        <div class="auth-bg-blob blob-1"></div>
+        <div class="auth-bg-blob blob-2"></div>
+        <div class="brand-header" style="margin-top:2.5rem;">
+            <h1 class="brand-name" style="font-size:2rem;">Create Account</h1>
+            <p class="tagline">Join ContriPe today.</p>
+        </div>
+        <div class="auth-card">
             <div class="form-group">
-                <input type="text" id="signupName" placeholder="Full Name">
-                <input type="email" id="signupEmail" placeholder="Email Address">
-                <input type="password" id="signupPassword" placeholder="Create Password">
-                <button class="primary-btn" onclick="handleSignup()">Sign Up</button>
-            </div>
-            <div class="auth-toggle-container">
-                <p class="auth-text">Already have an account? <a href="#" class="auth-link" onclick="navigateTo('loginScreen')">Login</a></p>
-            </div>
-        </section>
-
-        <section id="onboardingScreen" class="screen" style="padding: 1.5rem 1rem;">
-            <div class="onboarding-container">
-                <div class="skip-container">
-                    <button class="skip-btn" onclick="finishTour()">Skip</button>
+                <div class="input-wrap">
+                    <span class="input-icon">👤</span>
+                    <input type="text" id="signupName" placeholder="Full name">
                 </div>
-
-                <div class="slider-wrapper" id="sliderWrapper">
-                    <div class="slide">
-                        <div class="slide-illustration">
-                            <span class="emoji-huge animation-float">👋</span>
-                            <span class="emoji-small animation-bounce" style="top: 10%; right: 15%;">✨</span>
-                        </div>
-                        <h2 class="slide-title">Welcome to ContriPe., <br><span id="welcomeName" style="color: var(--accent-primary);">User</span>!</h2>
-                        <p class="slide-desc">Your ultimate companion for splitting bills and tracking expenses without the awkward math.</p>
-                    </div>
-                    <div class="slide">
-                        <div class="slide-illustration">
-                            <span class="emoji-huge animation-float" style="animation-delay: 0.5s;">🏖️</span>
-                            <span class="emoji-small animation-spin-slow" style="bottom: 15%; left: 10%;">🚗</span>
-                        </div>
-                        <h2 class="slide-title">Travel & Split</h2>
-                        <p class="slide-desc">Add expenses on the go and generate UPI QRs instantly to get paid back.</p>
-                    </div>
-                    <div class="slide">
-                        <div class="slide-illustration">
-                            <span class="emoji-huge animation-pulse">🍽️</span>
-                            <span class="emoji-small animation-float" style="top: 15%; right: 10%;">🥂</span>
-                        </div>
-                        <h2 class="slide-title">Dinner Dates & Chills</h2>
-                        <p class="slide-desc">Keep your friendships strong and your personal spending in check with our beautiful tracker.</p>
-                    </div>
+                <div class="input-wrap">
+                    <span class="input-icon">✉</span>
+                    <input type="email" id="signupEmail" placeholder="Email address">
                 </div>
+                <div class="input-wrap">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="signupPassword" placeholder="Create password">
+                </div>
+                <button class="primary-btn" onclick="handleSignup()">
+                    <span>Create Account</span>
+                    <span class="btn-arrow">→</span>
+                </button>
+            </div>
+            <p class="auth-text" style="text-align:center; margin-top:1rem;">Already have an account? <a href="#" class="auth-link" onclick="navigateTo('loginScreen')">Login →</a></p>
+        </div>
+    </section>
 
-                <div class="onboarding-controls">
-                    <div class="dots">
-                        <span class="dot active"></span>
-                        <span class="dot"></span>
-                        <span class="dot"></span>
+    <!-- ===== ONBOARDING SCREEN ===== -->
+    <section id="onboardingScreen" class="screen" style="padding:1.2rem 1rem;">
+        <div class="onboarding-container">
+            <div class="skip-container">
+                <button class="skip-btn" onclick="finishTour()">Skip</button>
+            </div>
+            <div class="slider-wrapper" id="sliderWrapper">
+                <div class="slide">
+                    <div class="slide-illustration">
+                        <div class="slide-icon-bg">
+                            <span class="slide-emoji animation-float">👋</span>
+                        </div>
+                        <div class="slide-sparkles">
+                            <span class="sparkle s1">✦</span>
+                            <span class="sparkle s2">✦</span>
+                            <span class="sparkle s3">✦</span>
+                        </div>
                     </div>
-                    <button class="primary-btn" id="nextSlideBtn" onclick="nextSlide()">Next ➔</button>
+                    <h2 class="slide-title">Hey <span id="welcomeName" class="accent-text">User</span>! 👋</h2>
+                    <p class="slide-desc">Your go-to app for splitting bills and tracking expenses — no awkward math, no drama.</p>
+                </div>
+                <div class="slide">
+                    <div class="slide-illustration">
+                        <div class="slide-icon-bg">
+                            <span class="slide-emoji animation-float">✈️</span>
+                        </div>
+                        <div class="slide-sparkles">
+                            <span class="sparkle s1">✦</span>
+                            <span class="sparkle s2">✦</span>
+                        </div>
+                    </div>
+                    <h2 class="slide-title">Trip with friends?</h2>
+                    <p class="slide-desc">Add expenses on the fly and generate a UPI QR instantly. Get paid back in seconds.</p>
+                </div>
+                <div class="slide">
+                    <div class="slide-illustration">
+                        <div class="slide-icon-bg">
+                            <span class="slide-emoji animation-pulse">📊</span>
+                        </div>
+                        <div class="slide-sparkles">
+                            <span class="sparkle s1">✦</span>
+                            <span class="sparkle s2">✦</span>
+                            <span class="sparkle s3">✦</span>
+                        </div>
+                    </div>
+                    <h2 class="slide-title">Know your money</h2>
+                    <p class="slide-desc">Track income & expenses beautifully. See exactly where every rupee goes.</p>
                 </div>
             </div>
-        </section>
+            <div class="onboarding-controls">
+                <div class="dots">
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+                <button class="primary-btn" id="nextSlideBtn" onclick="nextSlide()">Next →</button>
+            </div>
+        </div>
+    </section>
 
-        <section id="profileScreen" class="screen">
-            <header class="top-nav">
-                <h2>Set Up Profile</h2>
-            </header>
-            
-            <div class="profile-pic-placeholder" id="dpContainer" style="cursor: pointer; background-size: cover; background-position: center; overflow: hidden;">
+    <!-- ===== PROFILE SCREEN ===== -->
+    <section id="profileScreen" class="screen">
+        <div class="auth-bg-blob blob-1"></div>
+        <header class="top-nav">
+            <h2>Set Up Profile</h2>
+        </header>
+        <div class="profile-pic-outer">
+            <div class="profile-pic-placeholder" id="dpContainer" style="cursor:pointer; background-size:cover; background-position:center; overflow:hidden;">
                 <span id="dpIcon">📷</span>
             </div>
-            <input type="file" id="dpInput" accept="image/*" style="display: none;">
-
-            <div class="form-group">
+            <div class="profile-pic-badge">+</div>
+        </div>
+        <input type="file" id="dpInput" accept="image/*" style="display:none;">
+        <div class="form-group" style="margin-top:2rem;">
+            <div class="input-wrap">
+                <span class="input-icon">👤</span>
                 <input type="text" id="profileName" placeholder="Full Name" disabled>
-                <input type="text" id="profileUpi" placeholder="Your UPI ID (e.g. name@bank)">
-                <button class="primary-btn" id="saveProfileBtn">Save & Continue</button>
             </div>
-        </section>
+            <div class="input-wrap">
+                <span class="input-icon">💳</span>
+                <input type="text" id="profileUpi" placeholder="UPI ID (e.g. name@bank)">
+            </div>
+            <button class="primary-btn" id="saveProfileBtn">
+                <span>Save & Continue</span>
+                <span class="btn-arrow">→</span>
+            </button>
+        </div>
+    </section>
 
-        <section id="editProfileScreen" class="screen">
-            <header class="top-nav">
-                <button class="back-btn" onclick="navigateTo('dashboardScreen')">←</button>
-                <h2>Edit Profile</h2>
-            </header>
-            
-            <div class="profile-pic-placeholder" id="editDpContainer" style="cursor: pointer; background-size: cover; background-position: center; overflow: hidden;">
+    <!-- ===== EDIT PROFILE SCREEN ===== -->
+    <section id="editProfileScreen" class="screen">
+        <header class="top-nav">
+            <button class="back-btn" onclick="navigateTo('dashboardScreen')">←</button>
+            <h2>Edit Profile</h2>
+        </header>
+        <div class="profile-pic-outer">
+            <div class="profile-pic-placeholder" id="editDpContainer" style="cursor:pointer; background-size:cover; background-position:center; overflow:hidden;">
                 <span id="editDpIcon">📷</span>
             </div>
-            <input type="file" id="editDpInput" accept="image/*" style="display: none;">
-
-            <div class="form-group">
-                <label class="input-label">Display Name</label>
-                <input type="text" id="editName" placeholder="Full Name">
-                
-                <label class="input-label">UPI ID</label>
-                <input type="text" id="editUpi" placeholder="Your UPI ID">
-                
-                <button class="primary-btn" id="updateProfileBtn">Save Changes</button>
+            <div class="profile-pic-badge">+</div>
+        </div>
+        <input type="file" id="editDpInput" accept="image/*" style="display:none;">
+        <div class="form-group" style="margin-top:2rem;">
+            <div class="field-group">
+                <label class="field-label">Display Name</label>
+                <div class="input-wrap">
+                    <span class="input-icon">👤</span>
+                    <input type="text" id="editName" placeholder="Full Name">
+                </div>
             </div>
-        </section>
+            <div class="field-group">
+                <label class="field-label">UPI ID</label>
+                <div class="input-wrap">
+                    <span class="input-icon">💳</span>
+                    <input type="text" id="editUpi" placeholder="name@bank">
+                </div>
+            </div>
+            <button class="primary-btn" id="updateProfileBtn">
+                <span>Save Changes</span>
+                <span class="btn-arrow">→</span>
+            </button>
+        </div>
+    </section>
 
-        <section id="dashboardScreen" class="screen">
-            <header class="top-nav" style="justify-content: space-between; margin-bottom: 1rem;">
-                <div style="display: flex; align-items: center;">
-                    <button class="menu-btn" onclick="openSidebar()">&#9776;</button>
-                    <h2>Hi, <span id="dashName">User</span> 👋</h2>
+    <!-- ===== DASHBOARD SCREEN ===== -->
+    <section id="dashboardScreen" class="screen">
+        <header class="dash-header">
+            <div class="dash-header-left">
+                <button class="menu-btn" onclick="openSidebar()">
+                    <span></span><span></span><span></span>
+                </button>
+                <div>
+                    <p class="dash-greeting">Good day 👋</p>
+                    <h2 class="dash-name">Hi, <span id="dashName">User</span></h2>
                 </div>
-            </header>
+            </div>
+            <div class="dash-avatar" id="dashAvatar">U</div>
+        </header>
 
-            <div class="premium-credit-card">
-                <div class="card-header">
-                    <span class="card-logo">ContriPe.</span>
-                    <svg class="chip" viewBox="0 0 40 30" width="35" height="25">
-                        <rect width="40" height="30" rx="4" fill="rgba(255,255,255,0.8)"/>
-                        <path d="M0 10 h10 M0 20 h10 M40 10 h-10 M40 20 h-10 M15 0 v30 M25 0 v30" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" fill="none"/>
-                        <rect x="10" y="5" width="20" height="20" rx="2" stroke="rgba(0,0,0,0.5)" stroke-width="1.5" fill="none"/>
-                    </svg>
-                </div>
-                
-                <div class="card-balance-section">
-                    <p>Net Balance</p>
-                    <h1 id="dashNetBalance" class="text-green">₹0.00</h1>
-                </div>
-                
-                <div class="card-details">
-                    <div class="card-number">**** **** **** 4086</div>
-                    <div class="card-name" id="dashCardName">USER NAME</div>
-                </div>
-
-                <div class="card-stats">
-                    <div class="stat">
-                        <span>↓ Credited</span>
-                        <h4 id="dashIncome" class="text-green">₹0.00</h4>
+        <!-- BALANCE CARD -->
+        <div class="balance-card">
+            <div class="balance-card-inner">
+                <div class="balance-card-top">
+                    <div>
+                        <p class="balance-label">Total Balance</p>
+                        <h1 id="dashNetBalance" class="balance-amount text-green">₹0.00</h1>
                     </div>
-                    <div class="stat" style="text-align: right;">
-                        <span>↑ Debited</span>
-                        <h4 id="dashExpense" class="text-red">₹0.00</h4>
+                    <div class="balance-card-logo">
+                        <span>CP</span>
                     </div>
                 </div>
-            </div>
-
-            <div class="dashboard-cards">
-                <div class="dash-card premium-card" onclick="navigateTo('contriScreen')">
-                    <h3>🤝 Let's Contri</h3>
-                    <p>Split bills and generate UPI QR</p>
+                <div class="balance-stats">
+                    <div class="balance-stat">
+                        <div class="stat-icon credit-icon">↓</div>
+                        <div>
+                            <p class="stat-label">Credited</p>
+                            <h4 id="dashIncome" class="text-green">₹0.00</h4>
+                        </div>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="balance-stat">
+                        <div class="stat-icon debit-icon">↑</div>
+                        <div>
+                            <p class="stat-label">Debited</p>
+                            <h4 id="dashExpense" class="text-red">₹0.00</h4>
+                        </div>
+                    </div>
                 </div>
-                <div class="dash-card glass-card" onclick="navigateTo('trackerScreen')">
-                    <h3>📊 Expense Tracker</h3>
-                    <p>Analyze your personal spending</p>
+                <div class="card-bottom-row">
+                    <span class="card-number-dots">•••• •••• •••• 4086</span>
+                    <span class="card-name-chip" id="dashCardName">USER NAME</span>
                 </div>
             </div>
-        </section>
+            <div class="card-glow-green"></div>
+            <div class="card-glow-accent"></div>
+        </div>
 
-        <section id="contriScreen" class="screen">
-            <header class="top-nav">
-                <button class="back-btn" onclick="navigateTo('dashboardScreen')">←</button>
-                <h2>Let's Contri</h2>
-            </header>
-            
-            <div class="input-group" style="margin-top: 20px;">
+        <!-- QUICK ACTIONS -->
+        <div class="quick-actions">
+            <p class="section-title">Quick Actions</p>
+            <div class="action-grid">
+                <div class="action-card" onclick="navigateTo('contriScreen')">
+                    <div class="action-icon-wrap contri-icon">
+                        <span>🤝</span>
+                    </div>
+                    <h3>Let's Contri</h3>
+                    <p>Split bills & QR</p>
+                    <span class="action-arrow">→</span>
+                </div>
+                <div class="action-card" onclick="navigateTo('trackerScreen')">
+                    <div class="action-icon-wrap tracker-icon">
+                        <span>📊</span>
+                    </div>
+                    <h3>Tracker</h3>
+                    <p>Spending insights</p>
+                    <span class="action-arrow">→</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== CONTRI SCREEN ===== -->
+    <section id="contriScreen" class="screen">
+        <header class="top-nav">
+            <button class="back-btn" onclick="navigateTo('dashboardScreen')">←</button>
+            <h2>Let's Contri 🤝</h2>
+        </header>
+
+        <div class="contri-input-card">
+            <div class="input-wrap">
+                <span class="input-icon">✏️</span>
                 <input type="text" id="expenseName" placeholder="What was it for?">
-                <input type="number" id="expenseAmount" placeholder="Amount (₹)">
-                
-                <div style="display: flex; gap: 12px;">
-                    <button class="primary-btn" id="addBtn" style="flex: 2;">Add Expense</button>
-                    <button class="danger-btn" id="resetBtn" style="flex: 1;">Reset</button>
+            </div>
+            <div class="input-wrap">
+                <span class="input-icon">₹</span>
+                <input type="number" id="expenseAmount" placeholder="Amount">
+            </div>
+            <div class="btn-row">
+                <button class="primary-btn" id="addBtn" style="flex:2">
+                    <span>Add</span>
+                    <span class="btn-arrow">+</span>
+                </button>
+                <button class="danger-btn" id="resetBtn" style="flex:1">Reset</button>
+            </div>
+        </div>
+
+        <ul id="expenseList" class="expense-list"></ul>
+
+        <div class="total-bar">
+            <span class="total-label">Total</span>
+            <span id="totalAmount" class="total-amount">₹0.00</span>
+        </div>
+
+        <div class="split-card">
+            <div class="split-card-left">
+                <span class="split-label">Split between</span>
+                <div class="split-counter">
+                    <button class="counter-btn" onclick="changeFriendCount(-1)">−</button>
+                    <input type="number" id="friendCount" value="1" min="1">
+                    <button class="counter-btn" onclick="changeFriendCount(1)">+</button>
                 </div>
             </div>
+            <div class="split-badge">people</div>
+        </div>
 
-            <ul id="expenseList" class="data-list" style="list-style: none; margin-top: 15px; max-height: 150px; overflow-y: auto;"></ul>
-
-            <div class="summary-card">
-                <h3>Total Trip Cost</h3>
-                <h2 id="totalAmount">₹0.00</h2>
-            </div>
-            
-            <div class="split-controls">
-                <label style="color: var(--text-primary); font-weight: 600;">How many friends?</label>
-                <input type="number" id="friendCount" value="1" min="1">
-            </div>
-
-            <div class="summary-card highlight" id="payBox">
-                <h3>Per Person Contribution</h3>
+        <div class="pay-card" id="payBox">
+            <div class="pay-card-left">
+                <p class="pay-label">Per Person</p>
                 <h2 id="perPersonAmount">₹0.00</h2>
-                <p>Tap to generate your QR code</p>
+                <p class="pay-hint">Tap to generate QR →</p>
             </div>
-        </section>
+            <div class="pay-qr-icon">⬡</div>
+        </div>
+    </section>
 
-        <section id="trackerScreen" class="screen">
-            <header class="top-nav">
-                <button class="back-btn" onclick="navigateTo('dashboardScreen')">←</button>
-                <h2>Personal Tracker</h2>
-            </header>
+    <!-- ===== TRACKER SCREEN ===== -->
+    <section id="trackerScreen" class="screen">
+        <header class="top-nav">
+            <button class="back-btn" onclick="navigateTo('dashboardScreen')">←</button>
+            <h2>Personal Tracker 📊</h2>
+        </header>
 
-            <div class="chart-container" id="chartWrapper" style="display: none; margin-top: 0;">
-                <h3 style="font-size: 1rem; color: var(--text-secondary); text-align: center; margin-bottom: 10px;">Expenses by Category</h3>
+        <div id="chartWrapper" style="display:none; margin-bottom:20px;">
+            <div class="chart-card">
+                <p class="chart-title">Spending by category</p>
                 <canvas id="expenseChart"></canvas>
             </div>
-
-            <div class="input-group" style="margin-top: 25px;">
-                <select id="trackerType" onchange="toggleTrackerCategory()">
-                    <option value="debit">🔴 Debited (Expense)</option>
-                    <option value="credit">🟢 Credited (Income)</option>
-                </select>
-                
-                <input type="text" id="trackerName" placeholder="Title (e.g. Salary, Coffee)">
-                
-                <select id="trackerCategory">
-                    <option value="Food">🍔 Food</option>
-                    <option value="Travel">🚕 Travel</option>
-                    <option value="Stay">🏨 Stay</option>
-                    <option value="Misc">🛍️ Misc</option>
-                </select>
-                
-                <input type="number" id="trackerAmount" placeholder="Amount (₹)">
-                
-                <div style="display: flex; gap: 12px; width: 100%;">
-                    <button class="primary-btn" id="addTrackerBtn" style="flex: 2;">Log Record</button>
-                    <button class="danger-btn" id="resetTrackerBtn" style="flex: 1;">Reset</button>
-                </div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 35px; margin-bottom: 15px;">
-                <h3 style="font-size: 1.1rem; color: var(--text-primary);">Transactions</h3>
-                <input type="month" id="trackerMonthFilter" class="month-picker" onchange="updateTrackerUI()">
-            </div>
-            
-            <ul id="trackerList" style="list-style: none; padding-bottom: 20px;"></ul>
-        </section>
-
-    </div>
-
-    <div id="qrModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="document.getElementById('qrModal').style.display='none'">&times;</span>
-            <h2>Scan to Pay</h2>
-            <p style="color: var(--text-secondary)">Paying: <strong id="receiverNameDisplay" style="color: var(--text-primary)">Name</strong></p>
-            <p style="color: var(--text-secondary)">Amount: <strong id="modalAmountDisplay" style="color: var(--accent-primary)">₹0.00</strong></p>
-            <div class="qr-container" id="qrcode"></div>
-            <p class="scan-hint">Use any UPI App</p>
         </div>
-    </div>
 
-    <script src="script.js"></script>
+        <div class="tracker-input-card">
+            <div class="type-toggle">
+                <button class="type-btn active" id="debitBtn" onclick="setTrackerType('debit')">
+                    <span class="type-dot red-dot"></span> Expense
+                </button>
+                <button class="type-btn" id="creditBtn" onclick="setTrackerType('credit')">
+                    <span class="type-dot green-dot"></span> Income
+                </button>
+            </div>
+
+            <div class="input-wrap">
+                <span class="input-icon">✏️</span>
+                <input type="text" id="trackerName" placeholder="Title (e.g. Coffee, Salary)">
+            </div>
+
+            <select id="trackerCategory" class="styled-select">
+                <option value="Food">🍔 Food</option>
+                <option value="Travel">🚕 Travel</option>
+                <option value="Stay">🏨 Stay</option>
+                <option value="Misc">🛍️ Misc</option>
+            </select>
+
+            <div class="input-wrap">
+                <span class="input-icon">₹</span>
+                <input type="number" id="trackerAmount" placeholder="Amount">
+            </div>
+
+            <div class="btn-row">
+                <button class="primary-btn" id="addTrackerBtn" style="flex:2">
+                    <span>Log It</span>
+                    <span class="btn-arrow">+</span>
+                </button>
+                <button class="danger-btn" id="resetTrackerBtn" style="flex:1">Reset</button>
+            </div>
+        </div>
+
+        <div class="tracker-filter-row">
+            <h3 class="section-title" style="margin:0">Transactions</h3>
+            <input type="month" id="trackerMonthFilter" class="month-picker" onchange="updateTrackerUI()">
+        </div>
+
+        <ul id="trackerList" style="list-style:none; padding-bottom:30px;"></ul>
+    </section>
+
+</div>
+
+<!-- QR MODAL -->
+<div id="qrModal" class="modal">
+    <div class="modal-backdrop" onclick="document.getElementById('qrModal').style.display='none'"></div>
+    <div class="modal-content">
+        <div class="modal-handle"></div>
+        <div class="modal-icon">🔐</div>
+        <h2 class="modal-title">Scan to Pay</h2>
+        <p class="modal-sub">Paying <strong id="receiverNameDisplay">Name</strong></p>
+        <div class="modal-amount-badge">
+            <span id="modalAmountDisplay">₹0.00</span>
+        </div>
+        <div class="qr-container" id="qrcode"></div>
+        <p class="scan-hint">Works with any UPI app · PhonePe · GPay · Paytm</p>
+        <button class="close-modal-btn" onclick="document.getElementById('qrModal').style.display='none'">Close</button>
+    </div>
+</div>
+
+<script>
+// Tracker type state
+let activeTrackerType = 'debit';
+function setTrackerType(type) {
+    activeTrackerType = type;
+    document.getElementById('trackerType') && (document.getElementById('trackerType').value = type);
+    document.getElementById('debitBtn').classList.toggle('active', type === 'debit');
+    document.getElementById('creditBtn').classList.toggle('active', type === 'credit');
+    document.getElementById('trackerCategory').style.display = type === 'debit' ? 'block' : 'none';
+}
+function changeFriendCount(delta) {
+    const inp = document.getElementById('friendCount');
+    let val = parseInt(inp.value) || 1;
+    val = Math.max(1, val + delta);
+    inp.value = val;
+    updateContriUI();
+}
+// Patch toggleTrackerCategory for legacy calls
+function toggleTrackerCategory() { setTrackerType(activeTrackerType); }
+</script>
+<script src="script.js"></script>
 </body>
 </html>
