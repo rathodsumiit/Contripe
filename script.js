@@ -25,7 +25,88 @@ let expenseChart;
 let qrCodeInstance = null;
 
 // ==========================================
-// 3. AUTH CONTROLLER
+// 3. CLOUD & LOCAL SYNC (PERSISTENCE)
+// ==========================================
+function syncDataToCloud() {
+    if (!currentUser.uid) return;
+
+    // 1. Instantly save locally (prevents data loss if network drops)
+    localStorage.setItem(`contripe_tracker_${currentUser.uid}`, JSON.stringify(trackerTransactions));
+    localStorage.setItem(`contripe_contri_${currentUser.uid}`, JSON.stringify(contriExpenses));
+
+    // 2. Save permanently to Firebase
+    db.collection("users").doc(currentUser.uid).set({
+        trackerTransactions: trackerTransactions,
+        contriExpenses: contriExpenses
+    }, { merge: true }).catch((e) => console.error("Firebase Sync Error:", e));
+}
+
+function checkUserAndNavigate(user) {
+    const localUpi = localStorage.getItem(`contripe_upi_${user.uid}`);
+    const localDp = localStorage.getItem(`contripe_dp_${user.uid}`);
+
+    // 1. Instantly load local arrays so UI doesn't wait for Firebase
+    const localTracker = localStorage.getItem(`contripe_tracker_${user.uid}`);
+    const localContri = localStorage.getItem(`contripe_contri_${user.uid}`);
+    if (localTracker) trackerTransactions = JSON.parse(localTracker);
+    if (localContri) contriExpenses = JSON.parse(localContri);
+
+    db.collection("users").doc(user.uid).get()
+        .then((doc) => {
+            if (doc.exists) {
+                if (doc.data().upi) currentUser.upi = doc.data().upi;
+                if (doc.data().name) currentUser.name = doc.data().name || currentUser.name;
+                if (doc.data().dp) applyProfilePicture(doc.data().dp);
+
+                // 2. Cloud data acts as the ultimate truth. Override local if it exists.
+                if (doc.data().trackerTransactions) {
+                    trackerTransactions = doc.data().trackerTransactions;
+                    localStorage.setItem(`contripe_tracker_${user.uid}`, JSON.stringify(trackerTransactions));
+                }
+                if (doc.data().contriExpenses) {
+                    contriExpenses = doc.data().contriExpenses;
+                    localStorage.setItem(`contripe_contri_${user.uid}`, JSON.stringify(contriExpenses));
+                }
+
+                updateTrackerUI();
+                updateContriUI();
+                updateDashboardCard();
+
+                if (currentUser.upi) {
+                    routeAfterAuth();
+                } else {
+                    navigateTo('profileScreen');
+                }
+            } else if (localUpi) {
+                currentUser.upi = localUpi;
+                if (localDp) applyProfilePicture(localDp);
+                routeAfterAuth();
+            } else {
+                const pn = document.getElementById('profileName');
+                if (pn) pn.value = currentUser.name;
+                navigateTo('profileScreen');
+            }
+        })
+        .catch((e) => {
+            console.error("Firestore Read Error:", e);
+            
+            // If Firebase fails, we still have the local data loaded! Update UI safely.
+            updateTrackerUI();
+            updateContriUI();
+            updateDashboardCard();
+
+            if (localUpi) {
+                currentUser.upi = localUpi;
+                if (localDp) applyProfilePicture(localDp);
+                routeAfterAuth();
+            } else {
+                navigateTo('profileScreen');
+            }
+        });
+}
+
+// ==========================================
+// 4. AUTH CONTROLLER
 // ==========================================
 auth.onAuthStateChanged((user) => {
     if (user) {
@@ -63,54 +144,6 @@ function routeAfterAuth() {
     } else {
         navigateTo('dashboardScreen');
     }
-}
-
-function syncDataToCloud() {
-    if (!currentUser.uid) return;
-    db.collection("users").doc(currentUser.uid).set({
-        trackerTransactions: trackerTransactions,
-        contriExpenses: contriExpenses
-    }, { merge: true }).catch((e) => console.error("Sync Error:", e));
-}
-
-function checkUserAndNavigate(user) {
-    const localUpi = localStorage.getItem(`contripe_upi_${user.uid}`);
-    const localDp = localStorage.getItem(`contripe_dp_${user.uid}`);
-
-    db.collection("users").doc(user.uid).get()
-        .then((doc) => {
-            if (doc.exists && doc.data().upi) {
-                currentUser.upi = doc.data().upi;
-                currentUser.name = doc.data().name || currentUser.name;
-                if (doc.data().dp) applyProfilePicture(doc.data().dp);
-                if (doc.data().trackerTransactions) trackerTransactions = doc.data().trackerTransactions;
-                if (doc.data().contriExpenses) contriExpenses = doc.data().contriExpenses;
-
-                updateTrackerUI();
-                updateContriUI();
-                updateDashboardCard();
-                routeAfterAuth();
-            } else if (localUpi) {
-                currentUser.upi = localUpi;
-                if (localDp) applyProfilePicture(localDp);
-                routeAfterAuth();
-            } else {
-                const pn = document.getElementById('profileName');
-                if (pn) pn.value = currentUser.name;
-                navigateTo('profileScreen');
-            }
-        })
-        .catch(() => {
-            if (localUpi) {
-                currentUser.upi = localUpi;
-                if (localDp) applyProfilePicture(localDp);
-                routeAfterAuth();
-            } else {
-                const pn = document.getElementById('profileName');
-                if (pn) pn.value = currentUser.name;
-                navigateTo('profileScreen');
-            }
-        });
 }
 
 function handleEmailLogin() {
@@ -157,7 +190,7 @@ function handleLogout() {
 }
 
 // ==========================================
-// 4. ONBOARDING TOUR
+// 5. ONBOARDING TOUR
 // ==========================================
 let currentSlideIndex = 0;
 
@@ -187,7 +220,7 @@ function finishTour() {
 }
 
 // ==========================================
-// 5. SIDEBAR
+// 6. SIDEBAR
 // ==========================================
 function openSidebar() {
     document.getElementById('sidebarMenu').classList.add('open');
@@ -209,7 +242,7 @@ function updateSidebarUser() {
 }
 
 // ==========================================
-// 6. PROFILE
+// 7. PROFILE
 // ==========================================
 function handleImageSelect(event, isEditScreen) {
     const file = event.target.files[0];
@@ -288,7 +321,7 @@ const upb = document.getElementById('updateProfileBtn');
 if (upb) upb.addEventListener('click', () => saveProfileData('editName', 'editUpi', 'updateProfileBtn', false));
 
 // ==========================================
-// 7. NAVIGATION & DASHBOARD
+// 8. NAVIGATION & DASHBOARD
 // ==========================================
 function navigateTo(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -333,7 +366,7 @@ function updateDashboardCard() {
 }
 
 // ==========================================
-// 8. CONTRI LOGIC
+// 9. CONTRI LOGIC
 // ==========================================
 const addBtn = document.getElementById('addBtn');
 if (addBtn) addBtn.addEventListener('click', () => {
@@ -425,13 +458,8 @@ if (payBox) payBox.addEventListener('click', () => {
 });
 
 // ==========================================
-// 9. TRACKER LOGIC
+// 10. TRACKER LOGIC
 // ==========================================
-function toggleTrackerCategory() {
-    const cat = document.getElementById('trackerCategory');
-    if (cat) cat.style.display = activeTrackerType === 'debit' ? 'block' : 'none';
-}
-
 const addTrackerBtn = document.getElementById('addTrackerBtn');
 if (addTrackerBtn) addTrackerBtn.addEventListener('click', () => {
     const type = activeTrackerType || 'debit';
